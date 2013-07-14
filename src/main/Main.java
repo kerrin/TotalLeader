@@ -3,15 +3,16 @@ package main;
 import java.awt.Color;
 
 import main.Logger.LEVEL;
+import main.ai.ComputerPlay;
+import main.ai.ComputerStart;
+import main.board.Board;
+import main.config.Config;
+import main.display.Display;
+import main.enums.GameState;
+import main.events.EventManager;
+import main.player.Player;
+import main.player.Player.TYPE;
 
-import player.Player;
-import player.Player.TYPE;
-import ai.ComputerPlay;
-import ai.ComputerStart;
-import board.Board;
-import config.Config;
-import display.Display;
-import events.EventManager;
 
 /**
  * 
@@ -41,68 +42,64 @@ import events.EventManager;
  *
  */
 public class Main {
-	private static final long TOO_LONG = 100000;
-	public static Config config;
+	public static final long TOO_LONG = 100000;
+	
+	public static GameStatus gameStatus;
 	public static Board board;
-	public static Display display;
-	public static EventManager eventManager;
-	private static GameState gameState = GameState.INIT;
-	public static int currentPlayerIndex;
-	public static Player[] players;
-	public static int currentTurn = 0;
-	public static int nativePlayerIndex;
-	public static int seaPlayerIndex;
-	public static ComputerPlay[] computerAi;
-	public static boolean pause = false;
-	public static Player winner;
 	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		config = new Config();
-		Logger.setLevel(LEVEL.fromString(config.getString(Config.KEY.DEBUG_LEVEL.getKey())));
-		computerAi = new ComputerPlay[config.getInt(Config.KEY.NUMBER_PLAYERS.getKey())];
+		gameStatus = new GameStatus();
+		gameStatus.config = new Config();
+		Logger.setLevel(LEVEL.fromString(gameStatus.config.getString(Config.KEY.DEBUG_LEVEL.getKey())));
+		gameStatus.computerAi = new ComputerPlay[gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey())];
 		board = new Board(
-				config.getInt(Config.KEY.BOARD_HEIGHT.getKey()),
-				config.getInt(Config.KEY.BOARD_WIDTH.getKey())
+				gameStatus.config.getInt(Config.KEY.BOARD_HEIGHT.getKey()),
+				gameStatus.config.getInt(Config.KEY.BOARD_WIDTH.getKey()),
+				gameStatus
 				);
 		
-		int numPlayers = config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
-		players = new Player[numPlayers+2];
-		nativePlayerIndex = numPlayers;
-		seaPlayerIndex = numPlayers+1;
+		int numPlayers = gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
+		gameStatus.players = new Player[numPlayers+2];
+		gameStatus.nativePlayerIndex = numPlayers;
+		gameStatus.seaPlayerIndex = numPlayers+1;
 		
-		players[nativePlayerIndex] = new Player(nativePlayerIndex, Player.TYPE.NATIVE, "Natives", Color.GREEN);
-		players[seaPlayerIndex] = new Player(seaPlayerIndex, Player.TYPE.NATIVE, "SEA", Color.BLUE);
-		
-		display = new Display();
-		while(gameState == GameState.INIT) {		
-			winner = null;
-			currentTurn = 0;
+		gameStatus.display = new Display();
+		while(gameStatus.gameState == GameState.INIT) {		
+			gameStatus.players[gameStatus.nativePlayerIndex] = 
+				new Player(gameStatus.nativePlayerIndex, Player.TYPE.NATIVE, "Natives", Color.GREEN, gameStatus, board);
+			gameStatus.players[gameStatus.seaPlayerIndex] = 
+				new Player(gameStatus.seaPlayerIndex, Player.TYPE.NATIVE, "SEA", Color.BLUE, gameStatus, board);
+			
+			gameStatus.winner = null;
+			gameStatus.currentTurn = 0;
 			board.init();
 	
-			display.init(board);
-			display.newBoard(board);
+			gameStatus.display.init(gameStatus, board);
+			gameStatus.display.newBoard(board);
 			
-			eventManager = new EventManager();
+			gameStatus.eventManager = new EventManager(gameStatus, board);
 			setGameState(GameState.START_LOCATIONS);
-			for(currentPlayerIndex = 0; currentPlayerIndex < numPlayers; currentPlayerIndex++) {
-				int color = config.getInt(Config.KEY.PLAYER_COLOR.getKey(),currentPlayerIndex);
-				String typeStr = config.getString(Config.KEY.PLAYER_TYPE.getKey(),currentPlayerIndex);
+			for(gameStatus.currentPlayerIndex = 0; gameStatus.currentPlayerIndex < numPlayers; gameStatus.currentPlayerIndex++) {
+				int color = gameStatus.config.getInt(Config.KEY.PLAYER_COLOR.getKey(),gameStatus.currentPlayerIndex);
+				String typeStr = gameStatus.config.getString(Config.KEY.PLAYER_TYPE.getKey(),gameStatus.currentPlayerIndex);
 				Player.TYPE type = Player.TYPE.fromString(typeStr);
-				players[currentPlayerIndex] = new Player(currentPlayerIndex, type, "Player "+currentPlayerIndex, new Color(color));
+				gameStatus.players[gameStatus.currentPlayerIndex] = 
+					new Player(gameStatus.currentPlayerIndex, type, "Player "+gameStatus.currentPlayerIndex, new Color(color), gameStatus, board);
+				gameStatus.humanPlaying = gameStatus.humanPlaying || type == TYPE.PLAYER;
 			}
-			for(currentPlayerIndex = 0; currentPlayerIndex < numPlayers; currentPlayerIndex++) {
-				Player currentPlayer = players[currentPlayerIndex];
+			for(gameStatus.currentPlayerIndex = 0; gameStatus.currentPlayerIndex < numPlayers; gameStatus.currentPlayerIndex++) {
+				Player currentPlayer = gameStatus.players[gameStatus.currentPlayerIndex];
 				if(currentPlayer.getType() == TYPE.COMPUTER) {
-					new Thread(new ComputerStart()).start();
-					computerAi[currentPlayerIndex] = ComputerPlay.getComputerPlayer(currentPlayerIndex);
-					String filename = computerAi[currentPlayerIndex].filename;
+					new Thread(new ComputerStart(gameStatus, board)).start();
+					gameStatus.computerAi[gameStatus.currentPlayerIndex] = ComputerPlay.getComputerPlayer(gameStatus.currentPlayerIndex, gameStatus, board);
+					String filename = gameStatus.computerAi[gameStatus.currentPlayerIndex].filename;
 					Logger.info("Using Computer "+(filename==null?"New":filename));
 				} else {
 					// In case we change player type progmatically
-					computerAi[currentPlayerIndex] = null;
+					gameStatus.computerAi[gameStatus.currentPlayerIndex] = null;
 				}
 				while(currentPlayer.getStartLocationX() < 0) {
 					try {
@@ -111,49 +108,49 @@ public class Main {
 						e.printStackTrace();
 					}
 				}
-				board.startPlayer(players[currentPlayerIndex]);
-				display.repaint();
+				board.startPlayer(gameStatus.players[gameStatus.currentPlayerIndex]);
+				gameStatus.display.repaint();
 			}
-			currentPlayerIndex = 0;
+			gameStatus.currentPlayerIndex = 0;
 			setGameState(GameState.PLAYING);
-			currentTurn++;
+			gameStatus.currentTurn++;
 			// Catch the first player being a computer at the game start
-			if(players[currentPlayerIndex].getType() == TYPE.COMPUTER) {
-				ComputerPlay.spawnComputerPlayThread(computerAi[currentPlayerIndex]);
+			if(gameStatus.players[gameStatus.currentPlayerIndex].getType() == TYPE.COMPUTER) {
+				ComputerPlay.spawnComputerPlayThread(gameStatus.computerAi[gameStatus.currentPlayerIndex]);
 			}
 			int lastTurn = 0;
 			long lastTurnChange = System.currentTimeMillis();
-			while(gameState != GameState.GAME_OVER) {
-				if(lastTurn < currentTurn) {
-					lastTurn = currentTurn;
+			while(gameStatus.gameState != GameState.GAME_OVER) {
+				if(lastTurn < gameStatus.currentTurn) {
+					lastTurn = gameStatus.currentTurn;
 					lastTurnChange = System.currentTimeMillis();
 				} else if(lastTurnChange + TOO_LONG < System.currentTimeMillis()) {
 					if(Logger.setLevel(LEVEL.TRACE)) Logger.trace("Delayed, so setting logger to trace");
 				}
-				display.repaint();
+				gameStatus.display.repaint();
 			}
 			ComputerPlay.waitComputerPlayer();
 			NextPlayerThread.waitOnPlayerDone();
 			Logger.info("=============Game Over=============");
 			// Show scores
-			winner = players[0];
+			gameStatus.winner = gameStatus.players[0];
 			for(int i=0; i < numPlayers; i++) {
-				players[i].score();
-				if(players[i].getScore() > winner.getScore()) winner = players[i];
+				gameStatus.players[i].score();
+				if(gameStatus.players[i].getScore() > gameStatus.winner.getScore()) gameStatus.winner = gameStatus.players[i];
 			}
-			display.repaint();
+			gameStatus.display.repaint();
 			// Mark the winning computer player
-			if(players[winner.getPlayerIndex()].getType() == TYPE.COMPUTER) {
-				computerAi[winner.getPlayerIndex()].winner = true;
+			if(gameStatus.players[gameStatus.winner.getPlayerIndex()].getType() == TYPE.COMPUTER) {
+				gameStatus.computerAi[gameStatus.winner.getPlayerIndex()].winner = true;
 			}
-			for(ComputerPlay comp:computerAi) {
-				FileManager.saveComputerPlayer(comp);
-				FileManager.deletePreviousFile(comp);
+			for(ComputerPlay comp:gameStatus.computerAi) {
+				FileManager.saveComputerPlayer(comp, gameStatus, board);
+				FileManager.deletePreviousFile(comp, gameStatus);
 			}
-			if(config.getInt(Config.KEY.AUTO_PLAY.getKey()) > 0) gameState = GameState.INIT;
+			if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) > 0) gameStatus.gameState = GameState.INIT;
 		}
-		pause = true;
-		while(pause) {
+		gameStatus.pause = true;
+		while(gameStatus.pause) {
 			Thread.yield();
 			try {
 				Thread.sleep(10);
@@ -168,7 +165,7 @@ public class Main {
 	 * Previous player finished, move the player on
 	 */
 	public static void nextPlayer() {
-		while(pause) {
+		while(gameStatus.pause) {
 			Thread.yield();
 			try {
 				Thread.sleep(10);
@@ -180,37 +177,37 @@ public class Main {
 		while(skipPlayer) {
 			skipPlayer = false;
 			Logger.debug("Next Player");
-			int numPlayers = config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
-			currentPlayerIndex++;
-			if(currentPlayerIndex >= numPlayers) {
-				currentPlayerIndex = 0;
-				if(gameState == GameState.PLAYING_RECRUITMENT) {
+			int numPlayers = gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
+			gameStatus.currentPlayerIndex++;
+			if(gameStatus.currentPlayerIndex >= numPlayers) {
+				gameStatus.currentPlayerIndex = 0;
+				if(gameStatus.gameState == GameState.PLAYING_RECRUITMENT) {
 					setGameState(GameState.PLAYING);
 				} else {
-					currentTurn++;
-					Logger.debug("Turn "+currentTurn);
+					gameStatus.currentTurn++;
+					Logger.debug("Turn "+gameStatus.currentTurn);
 	
-					if(Main.currentTurn % Main.config.getInt(Config.KEY.RECRUITMENT_TURNS.getKey()) == 0) {
+					if(gameStatus.currentTurn % Main.gameStatus.config.getInt(Config.KEY.RECRUITMENT_TURNS.getKey()) == 0) {
 						setGameState(GameState.PLAYING_RECRUITMENT);
 					}
 					checkGameOver();
-					if(gameState == GameState.GAME_OVER) return;
+					if(gameStatus.gameState == GameState.GAME_OVER) return;
 				}
 			}
-			Logger.debug("Player "+currentPlayerIndex);
+			Logger.debug("Player "+gameStatus.currentPlayerIndex);
 	
-			if(gameState == GameState.PLAYING_RECRUITMENT) {
-				players[currentPlayerIndex].recruitments();
-				if(players[currentPlayerIndex].getRecruits() <= 0) {
+			if(gameStatus.gameState == GameState.PLAYING_RECRUITMENT) {
+				gameStatus.players[gameStatus.currentPlayerIndex].recruitments();
+				if(gameStatus.players[gameStatus.currentPlayerIndex].getRecruits() <= 0) {
 					skipPlayer = true;
 				}
 			}
 			// Players with no units don't get a turn
-			if(skipPlayer || players[currentPlayerIndex].getTotalUnits() <= 0) {
+			if(skipPlayer || gameStatus.players[gameStatus.currentPlayerIndex].getTotalUnits() <= 0) {
 				skipPlayer = true;
 			} else {
-				if(players[currentPlayerIndex].getType() == TYPE.COMPUTER) {
-					ComputerPlay.spawnComputerPlayThread(computerAi[currentPlayerIndex]);
+				if(gameStatus.players[gameStatus.currentPlayerIndex].getType() == TYPE.COMPUTER) {
+					ComputerPlay.spawnComputerPlayThread(gameStatus.computerAi[gameStatus.currentPlayerIndex]);
 				}
 			}
 		}
@@ -220,13 +217,13 @@ public class Main {
 	 * Check if the end game conditions are met
 	 */
 	private static void checkGameOver() {
-		if(currentTurn > config.getInt(Config.KEY.GAME_TURNS.getKey())) {
+		if(gameStatus.currentTurn > gameStatus.config.getInt(Config.KEY.GAME_TURNS.getKey())) {
 			setGameState(GameState.GAME_OVER);
 		}
 		int activePlayers = 0;
 		int lastActivePlayer = -1;
-		for(int i=0; i < config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());i++) {
-			if(players[i].getTotalUnits() > 0) {
+		for(int i=0; i < gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());i++) {
+			if(gameStatus.players[i].getTotalUnits() > 0) {
 				activePlayers++;
 				lastActivePlayer = i;
 			}
@@ -249,8 +246,8 @@ public class Main {
 	 * @param newState
 	 */
 	public static void setGameState(GameState newState) {
-		if(gameState == GameState.GAME_OVER && newState != GameState.INIT) return;
-		gameState = newState;
+		if(gameStatus.gameState == GameState.GAME_OVER && newState != GameState.INIT) return;
+		gameStatus.gameState = newState;
 	}
 
 	/**
@@ -259,6 +256,6 @@ public class Main {
 	 * @return
 	 */
 	public static GameState getGameState() {
-		return gameState;
+		return gameStatus.gameState;
 	}
 }
