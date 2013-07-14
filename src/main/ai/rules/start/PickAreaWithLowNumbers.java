@@ -19,8 +19,8 @@ public class PickAreaWithLowNumbers extends StartRule {
 	/**
 	 * C'tor
 	 */
-	public PickAreaWithLowNumbers(GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, gameStatus);
+	public PickAreaWithLowNumbers(GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 
@@ -31,8 +31,8 @@ public class PickAreaWithLowNumbers extends StartRule {
 	 * @param order
 	 * @param actor
 	 */
-	public PickAreaWithLowNumbers(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus);
+	public PickAreaWithLowNumbers(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 

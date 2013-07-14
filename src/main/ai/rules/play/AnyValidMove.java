@@ -15,12 +15,12 @@ public class AnyValidMove extends PlayRule {
 	private static String NAME = "AnyValidMove";
 	private static String DESCRIPTION = "Find the first valid move. A last resort.";
 	
-	public AnyValidMove(GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, gameStatus, board);
+	public AnyValidMove(GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, board, ourPlayerIndex);
 	}
 
-	public AnyValidMove(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board);
+	public AnyValidMove(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board, ourPlayerIndex);
 	}
 
 	@Override

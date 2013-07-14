@@ -38,8 +38,8 @@ public class FindNumber extends RecruitRule {
 	 * @param parts
 	 * @param weight
 	 */
-	public FindNumber(String[] parts, int weight, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, gameStatus);
+	public FindNumber(String[] parts, int weight, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, gameStatus, ourPlayerIndex);
 		this.board = board;
 		for(int i=1; i < parts.length; i++) {
 			String[] kv = parts[i].split("=");
@@ -59,8 +59,8 @@ public class FindNumber extends RecruitRule {
 	}
 
 	// C'tors for random weightings
-	public FindNumber(int numberToFindUs, int numberToFindOponent, int maxAdjacentSquareThatAreUs, int requiredAdjacentSquareThatAreUs, int requiredAnAdjacentSquareThatIsPlayer, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, gameStatus);
+	public FindNumber(int numberToFindUs, int numberToFindOponent, int maxAdjacentSquareThatAreUs, int requiredAdjacentSquareThatAreUs, int requiredAnAdjacentSquareThatIsPlayer, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, gameStatus, ourPlayerIndex);
 		this.board = board;
 		this.numberToFindUs = numberToFindUs;
 		this.numberToFindOponent = numberToFindOponent;
@@ -71,8 +71,8 @@ public class FindNumber extends RecruitRule {
 	}
 	
 	// C'tors for assigned weightings
-	public FindNumber(int numberToFindUs, int numberToFindOponent, int maxAdjacentSquareThatAreUs, int requiredAdjacentSquareThatAreUs, int requiredAnAdjacentSquareThatIsPlayer, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, weighting, order, actor, gameStatus);
+	public FindNumber(int numberToFindUs, int numberToFindOponent, int maxAdjacentSquareThatAreUs, int requiredAdjacentSquareThatAreUs, int requiredAnAdjacentSquareThatIsPlayer, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, weighting, order, actor, gameStatus, ourPlayerIndex);
 		this.board = board;
 		this.numberToFindUs = numberToFindUs;
 		this.numberToFindOponent = numberToFindOponent;
@@ -88,8 +88,11 @@ public class FindNumber extends RecruitRule {
 	 * @param copyRule	Rule to copy
 	 * @param raastip	requiredAdjacentSquareThatIsPlayer
 	 */
-	public FindNumber(FindNumber copyRule, int raastip) {
-		this(copyRule.numberToFindUs, copyRule.numberToFindOponent, copyRule.maxAdjacentSquareThatAreUs, copyRule.requiredAdjacentSquareThatAreUs, raastip, copyRule.weighting, copyRule.order, copyRule.actor, copyRule.gameStatus, copyRule.board);
+	public FindNumber(FindNumber copyRule, int raastip, int ourPlayerIndex) {
+		this(copyRule.numberToFindUs, copyRule.numberToFindOponent, copyRule.maxAdjacentSquareThatAreUs, 
+				copyRule.requiredAdjacentSquareThatAreUs, raastip, copyRule.weighting, copyRule.order, 
+				copyRule.actor, copyRule.gameStatus, copyRule.board, 
+				ourPlayerIndex);
 	}
 
 	/**
@@ -152,7 +155,7 @@ public class FindNumber extends RecruitRule {
 	 * 
 	 * @return	ConfigDescriptor
 	 */
-	public static String getConfigDescriptor(int ntfu, int ntfo, int mastau, int rastau, int raastip) {
+	public static String getConfigDescriptor(int ntfu, int ntfo, int mastau, int rastau, int raastip, int ourPlayerIndex, GameStatus gameStatus) {
 		StringBuffer sb = new StringBuffer(":");
 		sb.append("rastau=");
 		sb.append(rastau);
@@ -174,63 +177,65 @@ public class FindNumber extends RecruitRule {
 		int boardHeight = gameStatus.config.getInt(Config.KEY.BOARD_HEIGHT.getKey());
 		Player currentPlayer = gameStatus.players[gameStatus.currentPlayerIndex];
 		Square[][] boardArray = board.getBoard();
-		
-		for(int fromX = 0; fromX < boardWidth; fromX++) {
-			for(int fromY = 0; fromY < boardHeight; fromY++) {
-				short fromUnits=boardArray[fromX][fromY].getUnits();
-				// Check we can assign a unit here (not full)
-				if(fromUnits >= maxUnits) {
-					Logger.trace(fromX+","+fromY+": Too many units");
-					continue;
-				}
-				// If we are looking for a specific number, check this is it
-				if(numberToFindUs != -1 && fromUnits != numberToFindUs) {
-					Logger.trace(fromX+","+fromY+": Needed number, but got " + fromUnits);
-					continue;
-				}
-				// Only care about it is our square
-				if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer)) continue;
-				int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
-				int leftToFind = requiredAdjacentSquareThatAreUs;
-				int foundUs = 0;
-				boolean foundOponentNumber = (numberToFindOponent == -1); // -1 means we don't care
-				boolean foundSpecificOponent = (requiredAnAdjacentSquareThatIsPlayer == -1); // -1 means we don't care
-				for(int i = 0; i < 4; i++) {
-					int nearX = fromX+diffs[i][0];
-					int nearY = fromY+diffs[i][1];
-					// Check the to board location is on the board
-					if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
-					
-					Player nearOwner = boardArray[nearX][nearY].getOwner();
-					
-					if(requiredAdjacentSquareThatAreUs > 1) {
-						if(nearOwner.equals(currentPlayer)) leftToFind--;
+		int[] playerIndexes = getPlayerIndexes(requiredAnAdjacentSquareThatIsPlayer);
+		for(int checkPlayerIndex:playerIndexes) {
+			for(int fromX = 0; fromX < boardWidth; fromX++) {
+				for(int fromY = 0; fromY < boardHeight; fromY++) {
+					short fromUnits=boardArray[fromX][fromY].getUnits();
+					// Check we can assign a unit here (not full)
+					if(fromUnits >= maxUnits) {
+						Logger.trace(fromX+","+fromY+": Too many units");
+						continue;
 					}
-					if(maxAdjacentSquareThatAreUs > 1) {
-						if(nearOwner.equals(currentPlayer)) foundUs++;
+					// If we are looking for a specific number, check this is it
+					if(numberToFindUs != -1 && fromUnits != numberToFindUs) {
+						Logger.trace(fromX+","+fromY+": Needed number, but got " + fromUnits);
+						continue;
 					}
-					
-					if(!nearOwner.equals(currentPlayer) && boardArray[nearX][nearY].getUnits() == numberToFindOponent) {
-						foundOponentNumber = true;
+					// Only care about it is our square
+					if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer)) continue;
+					int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+					int leftToFind = requiredAdjacentSquareThatAreUs;
+					int foundUs = 0;
+					boolean foundPlayerNumber = (numberToFindOponent == -1); // -1 means we don't care
+					boolean foundSpecificPlayer = (checkPlayerIndex == -1); // -1 means we don't care
+					for(int i = 0; i < 4; i++) {
+						int nearX = fromX+diffs[i][0];
+						int nearY = fromY+diffs[i][1];
+						// Check the to board location is on the board
+						if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
+						
+						Player nearOwner = boardArray[nearX][nearY].getOwner();
+						
+						if(requiredAdjacentSquareThatAreUs > 1) {
+							if(nearOwner.equals(currentPlayer)) leftToFind--;
+						}
+						if(maxAdjacentSquareThatAreUs > 1) {
+							if(nearOwner.equals(currentPlayer)) foundUs++;
+						}
+						
+						if(!nearOwner.equals(currentPlayer) && boardArray[nearX][nearY].getUnits() == numberToFindOponent) {
+							foundPlayerNumber = true;
+						}
+						
+						if(!nearOwner.equals(gameStatus.players[checkPlayerIndex])) {
+							foundSpecificPlayer = true;
+						}
 					}
-					
-					if(!nearOwner.equals(gameStatus.players[requiredAnAdjacentSquareThatIsPlayer])) {
-						foundSpecificOponent = true;
+					if(leftToFind > 0) {
+						Logger.trace(fromX+","+fromY+": Needed to find "+leftToFind+" more");
+						continue;
 					}
+					if(foundUs > maxAdjacentSquareThatAreUs) {
+						Logger.trace(fromX+","+fromY+": Found "+foundUs+" > " + maxAdjacentSquareThatAreUs);
+						continue;
+					}
+					if(!foundPlayerNumber) continue;
+					if(!foundSpecificPlayer) continue;
+					CoOrdinate move = new CoOrdinate(fromX,fromY);
+					Logger.debug(name+":"+move);
+					return move;
 				}
-				if(leftToFind > 0) {
-					Logger.trace(fromX+","+fromY+": Needed to find "+leftToFind+" more");
-					continue;
-				}
-				if(foundUs > maxAdjacentSquareThatAreUs) {
-					Logger.trace(fromX+","+fromY+": Found "+foundUs+" > " + maxAdjacentSquareThatAreUs);
-					continue;
-				}
-				if(!foundOponentNumber) continue;
-				if(!foundSpecificOponent) continue;
-				CoOrdinate move = new CoOrdinate(fromX,fromY);
-				Logger.debug(name+":"+move);
-				return move;
 			}
 		}
 		return null;

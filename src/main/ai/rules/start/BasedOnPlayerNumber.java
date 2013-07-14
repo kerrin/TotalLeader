@@ -9,12 +9,12 @@ public class BasedOnPlayerNumber extends StartRule {
 	private static String NAME = "BasedPlayer";
 	private static String DESCRIPTION = "Start Location Based On The Player Number";
 	
-	public BasedOnPlayerNumber(GameStatus gameStatus) {
-		super(NAME, DESCRIPTION, gameStatus);
+	public BasedOnPlayerNumber(GameStatus gameStatus, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, ourPlayerIndex);
 	}
 
-	public BasedOnPlayerNumber(int weighting, int order, ACTOR actor, GameStatus gameStatus) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus);
+	public BasedOnPlayerNumber(int weighting, int order, ACTOR actor, GameStatus gameStatus, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, ourPlayerIndex);
 	}
 
 	@Override

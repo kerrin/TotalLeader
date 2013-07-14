@@ -21,7 +21,7 @@ public class ComputerPlayConfig {
 	private HashMap<String,RecruitRule> recruitRules;
 	private SECTION section = SECTION.NONE;
 	
-	public ComputerPlayConfig(String config, GameStatus gameStatus, Board board) {
+	public ComputerPlayConfig(String config, GameStatus gameStatus, Board board, int ourPlayerIndex) {
 		playRules = new HashMap<String,PlayRule>();
 		recruitRules = new HashMap<String,RecruitRule>();
 		String[] lines = config.split("\n");
@@ -62,13 +62,13 @@ public class ComputerPlayConfig {
 				PlayRule rule = null;
 				String className = parts[0];
 				if(className.equals("FindANumberNearMe")) {
-					rule = new FindANumberNearMe(parts, weight, gameStatus, board);
+					rule = new FindANumberNearMe(parts, weight, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("FindANumberThatICanBuildLandTo")) {
-					rule = new FindANumberThatICanBuildLandTo(parts, weight, gameStatus, board);
+					rule = new FindANumberThatICanBuildLandTo(parts, weight, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("MoveToEdge")) {
-					rule = new MoveToEdge(parts,weight, gameStatus, board);
+					rule = new MoveToEdge(parts,weight, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("BuildBridge")) {
-					rule = new BuildBridge(gameStatus, board);
+					rule = new BuildBridge(gameStatus, board, ourPlayerIndex);
 					rule.weighting = weight;
 				} else {
 					Logger.error("Unknown rule class in config "+className);
@@ -81,7 +81,7 @@ public class ComputerPlayConfig {
 				RecruitRule rule = null;
 				String className = parts[0];
 				if(className.equals("FindNumber")) {
-					rule = new FindNumber(parts,weight, gameStatus, board);
+					rule = new FindNumber(parts,weight, gameStatus, board, ourPlayerIndex);
 				} else {
 					Logger.warn("Unknown rule class config "+className);
 				}

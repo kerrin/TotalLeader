@@ -201,7 +201,7 @@ public class Player {
 	 */
 	public boolean decrementRecruitsLeft() {
 		recruits--;
-		AnyValidRecruit anyValidRecruit = new AnyValidRecruit(gameStatus, board);
+		AnyValidRecruit anyValidRecruit = new AnyValidRecruit(gameStatus, board, playerIndex);
 		// No more recruits, or no valid place to put recruits
 		return recruits<=0 || anyValidRecruit.getBestRecruit() == null;
 	}

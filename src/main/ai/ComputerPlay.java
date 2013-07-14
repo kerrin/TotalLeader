@@ -16,6 +16,7 @@ import main.Utils;
 import main.ai.ComputerMove;
 import main.ai.rules.base.PlayRule;
 import main.ai.rules.base.RecruitRule;
+import main.ai.rules.base.RuleStats;
 import main.ai.rules.base.RuleStats.ACTOR;
 import main.ai.rules.play.AnyValidMove;
 import main.ai.rules.play.BuildBridge;
@@ -58,13 +59,6 @@ public class ComputerPlay implements Runnable {
 	private final GameStatus gameStatus;
 	
 	private final Board board;
-
-	/** Player ID to use for configs be mean me */
-	private static final int CONFIG_US_PLAYER_ID = 0;
-	/** Player ID to use for configs be mean an opponent */
-	private static final int CONFIG_OPPONENT_PLAYER_ID = 1;
-	/** Player ID to use for configs be mean the natives */
-	private static final int CONFIG_NATIVE_PLAYER_ID = 5;
 	
 	/** Track what locked the computer thread */
 	public static String computerThreadLockedBy = null;
@@ -108,7 +102,7 @@ public class ComputerPlay implements Runnable {
 		this.filename = filename;
 		this.gameStatus = gameStatus;
 		this.board = board;
-		ComputerPlayConfig config = new ComputerPlayConfig(configContent, gameStatus, board);
+		ComputerPlayConfig config = new ComputerPlayConfig(configContent, gameStatus, board, playerIndex);
 		setUpRulesFromConfigFile(config);
 	}
 	
@@ -123,69 +117,36 @@ public class ComputerPlay implements Runnable {
 		this.board = board;
 		int maxUnits = gameStatus.config.getInt(Config.KEY.MAX_UNITS.getKey());
 		playRules = new Vector<PlayRule>();
-		for(int b=0; b < 2; b++) { // Self Move
-			for(int near=4; near > 0; near--) { // Surrounded by me
-				int[] opponentWeights = new int[maxUnits+1];
-				for(int i=0; i <= maxUnits; i++) {
-					opponentWeights[i] = (int) (Math.random() * 100);
-				}
-				for(int playerId = gameStatus.nativePlayerIndex; playerId >= 0; playerId--) { // Move to a players square
-					if((b!=1 && playerId == playerIndex) || (b==1 && playerId != playerIndex)) {
-						// Self move and player index don't make sense
-						continue;
-					}
-					if(playerId == playerIndex || playerId == gameStatus.nativePlayerIndex) {
-						// Natives and self get own weightings
-						for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberNearMe(i, playerId, b==1, near, gameStatus, board));
-					} else {
-						// Give all opponent rules the same weighting
-						for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberNearMe(i, playerId, b==1, near, opponentWeights[i],0,ACTOR.ADD, gameStatus, board));
-					}
-				}
+		for(int near=4; near > 0; near--) { // Surrounded by me
+			for(int playerId = RuleStats.CONFIG_US_PLAYER_ID; playerId <= RuleStats.CONFIG_SEA_PLAYER_ID; playerId++) { // Move to a players square
+				for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberNearMe(i, playerId, near, gameStatus, board, playerIndex));
 			}
 		}
-		for(int b=0; b < 2; b++) {
-			for(int near=4; near > 0; near--) {
-				int[] opponentWeights = new int[maxUnits+1];
-				for(int i=0; i <= maxUnits; i++) {
-					opponentWeights[i] = (int) (Math.random() * 100);
-				}
-				for(int playerId = gameStatus.nativePlayerIndex; playerId >= 0; playerId--) {
-					if((b!=1 && playerId == playerIndex) || (b==1 && playerId != playerIndex)) {
-						// Self move and player index don't make sense
-						continue;
-					}
-					if(playerId == playerIndex || playerId == gameStatus.nativePlayerIndex) {
-						// Natives and self get own weightings
-						for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberThatICanBuildLandTo(i, playerId, b==1, near, gameStatus, board));
-					} else {
-						// Give all opponent rules the same weighting
-						for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberThatICanBuildLandTo(i, playerId, b==1, near, opponentWeights[i],0,ACTOR.ADD, gameStatus, board));
-					}
-				}
+		for(int near=4; near > 0; near--) {
+			for(int playerId = RuleStats.CONFIG_US_PLAYER_ID; playerId <= RuleStats.CONFIG_NATIVE_PLAYER_ID; playerId++) {
+				for(int i=0; i <= maxUnits; i++) playRules.add(new FindANumberThatICanBuildLandTo(i, playerId, near, gameStatus, board, playerIndex));
 			}
 		}
-		playRules.add(new BuildBridge(gameStatus, board));
+		playRules.add(new BuildBridge(gameStatus, board, playerIndex));
 		for(MoveToEdge.CONDITIONS condition:MoveToEdge.CONDITIONS.values()) {
-			playRules.add(new MoveToEdge(condition, gameStatus, board));
+			playRules.add(new MoveToEdge(condition, gameStatus, board, playerIndex));
 		}
 		
 		Logger.debug("Generated " + playRules.size() + " play rules");
 		
 		// Get the total weightings for play rules
 		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.weighting;
-		anyValidMove = new AnyValidMove(gameStatus, board);
+		anyValidMove = new AnyValidMove(gameStatus, board, playerIndex);
 		
 		recruitRules = new Vector<RecruitRule>();
 		for(int findUs=maxUnits-1; findUs >= 0; findUs--) {
 			for(int findOpponent=0; findOpponent <= maxUnits; findOpponent++) {
-				for(int adjPlayer=gameStatus.nativePlayerIndex; adjPlayer >= 0; adjPlayer--) {
-					if(adjPlayer == playerIndex) continue; // Doesn't make sense, covered by max/min attribute
+				for(int adjPlayerId = RuleStats.CONFIG_OPPONENT_PLAYER_ID; adjPlayerId <= RuleStats.CONFIG_NATIVE_PLAYER_ID; adjPlayerId++) {
 					for(int maxAdj=4; maxAdj > -1; maxAdj--) {
 						for(int minAdj=4; minAdj > -1; minAdj--) {
 							if(maxAdj == -1 || minAdj == -1 || maxAdj>=minAdj) {
 								Logger.trace("N"+findUs+",O"+findOpponent+","+minAdj+"to"+maxAdj);
-								recruitRules.add(new FindNumber(findUs,findOpponent,maxAdj,minAdj,adjPlayer, gameStatus, board));
+								recruitRules.add(new FindNumber(findUs,findOpponent,maxAdj,minAdj,adjPlayerId, gameStatus, board, playerIndex));
 							}
 						}
 					}
@@ -197,7 +158,7 @@ public class ComputerPlay implements Runnable {
 		
 		// Get the total weightings for play rules
 		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.weighting;
-		anyValidRecruit = new AnyValidRecruit(gameStatus, board);
+		anyValidRecruit = new AnyValidRecruit(gameStatus, board, playerIndex);
 	}
 	/**
 	 * Set up the rules based on a gene config file
@@ -210,31 +171,17 @@ public class ComputerPlay implements Runnable {
 		int maxUnits = gameStatus.config.getInt(Config.KEY.MAX_UNITS.getKey());
 		previousScores = config.getScores();
 		playRules = new Vector<PlayRule>();
-		for(int b=0; b < 2; b++) { // Self Move
-			for(int near=4; near > 0; near--) { // Surrounded by me
-				for(int playerId = gameStatus.nativePlayerIndex; playerId >= 0; playerId--) { // Move to a players square
-					if((b!=1 && playerId == playerIndex) || (b==1 && playerId != playerIndex)) {
-						// Self move and player index don't make sense
-						continue;
-					}
-					
-					for(int units=0; units <= maxUnits; units++) {
-						setUpFindANumberNearMe(configPlayRule, units, playerId, b==1, near);
-					}
+		for(int near=4; near > 0; near--) { // Surrounded by me
+			for(int playerId = RuleStats.CONFIG_US_PLAYER_ID; playerId <= RuleStats.CONFIG_SEA_PLAYER_ID; playerId++) {// Move to a players square
+				for(int units=0; units <= maxUnits; units++) {
+					setUpFindANumberNearMe(configPlayRule, units, playerId, near);
 				}
 			}
 		}
-		for(int b=0; b < 2; b++) {
-			for(int near=4; near > 0; near--) {
-				for(int playerId = gameStatus.nativePlayerIndex; playerId >= 0; playerId--) {
-					if((b!=1 && playerId == playerIndex) || (b==1 && playerId != playerIndex)) {
-						// Self move and player index don't make sense
-						continue;
-					}
-
-					for(int units=0; units <= maxUnits; units++) {
-						setUpFindANumberThatICanBuildLandTo(configPlayRule, units, playerId, b==1, near);
-					}
+		for(int near=4; near > 0; near--) {
+			for(int playerId = RuleStats.CONFIG_US_PLAYER_ID; playerId <= RuleStats.CONFIG_NATIVE_PLAYER_ID; playerId++) {
+				for(int units=0; units <= maxUnits; units++) {
+					setUpFindANumberThatICanBuildLandTo(configPlayRule, units, playerId, near);
 				}
 			}
 		}
@@ -247,18 +194,17 @@ public class ComputerPlay implements Runnable {
 		
 		// Get the total weightings for play rules
 		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.weighting;
-		anyValidMove = new AnyValidMove(gameStatus, board);
+		anyValidMove = new AnyValidMove(gameStatus, board, playerIndex);
 		
 		recruitRules = new Vector<RecruitRule>();
 		for(int findUs=maxUnits-1; findUs >= 0; findUs--) {
 			for(int findOpponent=0; findOpponent <= maxUnits; findOpponent++) {
-				for(int adjPlayer=gameStatus.nativePlayerIndex; adjPlayer >= 0; adjPlayer--) {
-					if(adjPlayer == playerIndex) continue; // Doesn't make sense, covered by min/max attributes
+				for(int adjPlayerId = RuleStats.CONFIG_OPPONENT_PLAYER_ID; adjPlayerId <= RuleStats.CONFIG_NATIVE_PLAYER_ID; adjPlayerId++) {
 					for(int maxAdj=4; maxAdj >= 0; maxAdj--) {
 						for(int minAdj=4; minAdj >= 0; minAdj--) {
 							if(maxAdj == -1 || minAdj == -1 || maxAdj>=minAdj) {
 								Logger.trace("U"+findUs+",O"+findUs+","+minAdj+"to"+maxAdj);
-								setUpFindNumber(configRecruitRule, findUs,findOpponent,maxAdj,minAdj,adjPlayer);
+								setUpFindNumber(configRecruitRule, findUs,findOpponent,maxAdj,minAdj,adjPlayerId);
 							}
 						}
 					}
@@ -270,7 +216,7 @@ public class ComputerPlay implements Runnable {
 		
 		// Get the total weightings for play rules
 		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.weighting;
-		anyValidRecruit = new AnyValidRecruit(gameStatus, board);
+		anyValidRecruit = new AnyValidRecruit(gameStatus, board, playerIndex);
 	}
 	
 	/**
@@ -443,10 +389,7 @@ public class ComputerPlay implements Runnable {
 	 * @return	Config for writing to file
 	 */
 	public String getConfigFileContents() {
-		int maxPlayers = gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
 		// Select an arbitrary player for the opponent
-		int anOponent = 1;
-		if(anOponent == playerIndex) anOponent=2;
 		StringBuffer sb = new StringBuffer("");
 		
 		sb.append("SCORE=");
@@ -462,43 +405,31 @@ public class ComputerPlay implements Runnable {
 		Iterator<PlayRule> playIter = playRules.iterator();
 		while(playIter.hasNext()) {
 			PlayRule rule = playIter.next();
+			/*
 			if(rule instanceof FindANumberNearMe) {
 				FindANumberNearMe r = (FindANumberNearMe) rule;
-				int rulePlayerIndex = r.getPlayerIndex();
-				if(rulePlayerIndex >=0 && rulePlayerIndex < maxPlayers) {
-					if(rulePlayerIndex == playerIndex) {
-						r.setPlayerIndex(CONFIG_US_PLAYER_ID);
-					} else {
-						if(rulePlayerIndex != anOponent) {
-							Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-									" pi:"+rulePlayerIndex+" != opi:"+anOponent);
-							continue;
-						}
-						r.setPlayerIndex(CONFIG_OPPONENT_PLAYER_ID);
-					}
-				} else if(rulePlayerIndex == gameStatus.nativePlayerIndex) {
-					r.setPlayerIndex(CONFIG_NATIVE_PLAYER_ID);
+				int configPlayerIndex = r.playerIndexForRule(playerIndex);
+				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
+					int rulePlayerIndex = r.getPlayerIndex();
+					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
+							" pi:"+rulePlayerIndex);
+					continue;
 				}
+				r.setPlayerIndex(configPlayerIndex);
 				r.resetAdditionalDescriptionAndConfigDescriptor();
 			} else if(rule instanceof FindANumberThatICanBuildLandTo) {
 				FindANumberThatICanBuildLandTo r = (FindANumberThatICanBuildLandTo) rule;
-				int rulePlayerIndex = r.getPlayerIndex();
-				if(rulePlayerIndex >=0 && rulePlayerIndex < maxPlayers) {
-					if(rulePlayerIndex == playerIndex) {
-						r.setPlayerIndex(CONFIG_US_PLAYER_ID);
-					} else {
-						if(rulePlayerIndex != anOponent) {
-							Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-									" pi:"+rulePlayerIndex+" != opi:"+anOponent);
-							continue;
-						}
-						r.setPlayerIndex(CONFIG_OPPONENT_PLAYER_ID);
-					}
-				} else if(rulePlayerIndex == gameStatus.nativePlayerIndex) {
-					r.setPlayerIndex(CONFIG_NATIVE_PLAYER_ID);
+				int configPlayerIndex = r.playerIndexForRule(playerIndex);
+				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
+					int rulePlayerIndex = r.getPlayerIndex();
+					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
+							" pi:"+rulePlayerIndex);
+					continue;
 				}
+				r.setPlayerIndex(configPlayerIndex);
 				r.resetAdditionalDescriptionAndConfigDescriptor();
 			}
+			*/
 			sb.append(rule.getClass().getSimpleName());
 			sb.append(rule.configDescriptor);
 			sb.append(">");
@@ -510,25 +441,18 @@ public class ComputerPlay implements Runnable {
 		Iterator<RecruitRule> recruitIter = recruitRules.iterator();
 		while(recruitIter.hasNext()) {
 			RecruitRule rule = recruitIter.next();
-			if(rule instanceof FindNumber) {
+			/*if(rule instanceof FindNumber) {
 				FindNumber r = (FindNumber) rule;
-				int rulePlayerIndex = r.getRequiredAnAdjacentSquareThatIsPlayer();
-				if(rulePlayerIndex >=0 && rulePlayerIndex < maxPlayers) {
-					if(rulePlayerIndex == playerIndex) {
-						r.setRequiredAnAdjacentSquareThatIsPlayer(CONFIG_US_PLAYER_ID);
-					} else {
-						if(rulePlayerIndex != anOponent) {
-							Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-									" pi:"+rulePlayerIndex+" != opi:"+anOponent);
-							continue;
-						}
-						r.setRequiredAnAdjacentSquareThatIsPlayer(CONFIG_OPPONENT_PLAYER_ID);
-					}
-				} else if(rulePlayerIndex == gameStatus.nativePlayerIndex) {
-					r.setRequiredAnAdjacentSquareThatIsPlayer(CONFIG_NATIVE_PLAYER_ID);
+				int configPlayerIndex = r.playerIndexForRule(playerIndex);
+				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
+					int rulePlayerIndex = r.getRequiredAnAdjacentSquareThatIsPlayer();
+					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
+							" pi:"+rulePlayerIndex);
+					continue;
 				}
+				r.setRequiredAnAdjacentSquareThatIsPlayer(configPlayerIndex);
 				r.resetAdditionalDescriptionAndConfigDescriptor();
-			}
+			}*/
 			sb.append(rule.getClass().getSimpleName());
 			sb.append(rule.configDescriptor);
 			sb.append(">");
@@ -544,33 +468,23 @@ public class ComputerPlay implements Runnable {
 	 * 
 	 * @param configPlayRule
 	 * @param ntf				Number to find
+	 * @param rulePlayerIndex	Player to be near
 	 * @param selfMove			Is a self move
 	 * @param near				Required Adjacent Square That Are Us
-	 * @param playerIndex			Player to be near
 	 */
-	private void setUpFindANumberNearMe(HashMap<String, PlayRule> configPlayRule, int ntf, int rulePlayerIndex, boolean selfMove, int near) {
-		int configPlayerIndex = rulePlayerIndex;
-		if(configPlayerIndex <= gameStatus.nativePlayerIndex) {
-			if(configPlayerIndex == playerIndex) {
-				configPlayerIndex = CONFIG_US_PLAYER_ID;
-			} else if(configPlayerIndex == gameStatus.nativePlayerIndex) {
-				configPlayerIndex = CONFIG_NATIVE_PLAYER_ID;
-			} else {
-				configPlayerIndex = CONFIG_OPPONENT_PLAYER_ID;
-			}
-		}
+	private void setUpFindANumberNearMe(HashMap<String, PlayRule> configPlayRule, int ntf, int rulePlayerIndex, int near) {
 		FindANumberNearMe configRule = (FindANumberNearMe)configPlayRule.get(
 				"FindANumberNearMe"+
-				FindANumberNearMe.getConfigDescriptor(ntf, configPlayerIndex, selfMove, near));
+				FindANumberNearMe.getConfigDescriptorForFile(ntf, rulePlayerIndex, near, playerIndex, gameStatus));
 		if(configRule != null) {
-			FindANumberNearMe rule = new FindANumberNearMe(configRule, rulePlayerIndex);
+			FindANumberNearMe rule = new FindANumberNearMe(configRule, rulePlayerIndex, playerIndex);
 			playRules.add(rule);
 		} else {
 			Logger.warn("Could not find FindANumberNearMe rule "+
-					FindANumberNearMe.getConfigDescriptor(ntf, configPlayerIndex, selfMove, near)+
+					FindANumberNearMe.getConfigDescriptorForFile(ntf, rulePlayerIndex, near, playerIndex, gameStatus)+
 					" in config "+(filename!=null?filename:"UNKNOWN"));
 
-			playRules.add(new FindANumberNearMe(ntf, rulePlayerIndex, selfMove, near, gameStatus, board));
+			playRules.add(new FindANumberNearMe(ntf, rulePlayerIndex, near, gameStatus, board, playerIndex));
 		}
 	}
 	
@@ -579,33 +493,23 @@ public class ComputerPlay implements Runnable {
 	 * 
 	 * @param configPlayRule
 	 * @param ntf				Number to find
-	 * @param playerIndex			Player to be near
-	 * @param selfMove			Is a self move
+	 * @param rulePlayerIndex	Player to be near
 	 * @param near				Required Adjacent Square That Are Us
 	 */
-	private void setUpFindANumberThatICanBuildLandTo(HashMap<String, PlayRule> configPlayRule, int ntf, int rulePlayerIndex, boolean selfMove, int near) {
-		int configPlayerIndex = rulePlayerIndex;
-		if(configPlayerIndex <= gameStatus.nativePlayerIndex) {
-			if(configPlayerIndex == playerIndex) {
-				configPlayerIndex = CONFIG_US_PLAYER_ID;
-			} else if(configPlayerIndex == gameStatus.nativePlayerIndex) {
-				configPlayerIndex = CONFIG_NATIVE_PLAYER_ID;
-			} else {
-				configPlayerIndex = CONFIG_OPPONENT_PLAYER_ID;
-			}
-		}
+	private void setUpFindANumberThatICanBuildLandTo(HashMap<String, PlayRule> configPlayRule, int ntf, int rulePlayerIndex, int near) {
+		
 		FindANumberThatICanBuildLandTo configRule = (FindANumberThatICanBuildLandTo)configPlayRule.get(
 				"FindANumberThatICanBuildLandTo"+
-				FindANumberThatICanBuildLandTo.getConfigDescriptor(ntf, configPlayerIndex, selfMove, near));
+				FindANumberThatICanBuildLandTo.getConfigDescriptor(ntf, rulePlayerIndex, near, playerIndex, gameStatus));
 		if(configRule != null) {
-			FindANumberThatICanBuildLandTo rule = new FindANumberThatICanBuildLandTo(configRule, rulePlayerIndex);
+			FindANumberThatICanBuildLandTo rule = new FindANumberThatICanBuildLandTo(configRule, rulePlayerIndex, playerIndex);
 			playRules.add(rule);
 		} else {
 			Logger.warn("Could not find FindANumberThatICanBuildLandTo rule "+
-					FindANumberThatICanBuildLandTo.getConfigDescriptor(ntf, configPlayerIndex, selfMove, near)+
+					FindANumberThatICanBuildLandTo.getConfigDescriptor(ntf, rulePlayerIndex, near, playerIndex, gameStatus)+
 					" in config "+(filename!=null?filename:"UNKNOWN"));
 
-			playRules.add(new FindANumberThatICanBuildLandTo(ntf, rulePlayerIndex, selfMove, near, gameStatus, board));
+			playRules.add(new FindANumberThatICanBuildLandTo(ntf, rulePlayerIndex, near, gameStatus, board, playerIndex));
 		}
 	}
 	
@@ -617,14 +521,14 @@ public class ComputerPlay implements Runnable {
 	 */
 	private void setUpMoveToEdge(HashMap<String, PlayRule> configPlayRule, MoveToEdge.CONDITIONS cond) {
 		MoveToEdge configRule = (MoveToEdge)configPlayRule.get(
-				"MoveToEdge"+MoveToEdge.getConfigDescriptor(cond));
+				"MoveToEdge"+MoveToEdge.getConfigDescriptorForFile(cond));
 		if(configRule != null) {
 			playRules.add(configRule);
 		} else {
 			Logger.warn("Could not find MoveToEdge rule "+
-					MoveToEdge.getConfigDescriptor(cond)+
+					MoveToEdge.getConfigDescriptorForFile(cond)+
 					" in config "+(filename!=null?filename:"UNKNOWN"));
-			playRules.add(new MoveToEdge(cond, gameStatus, board));
+			playRules.add(new MoveToEdge(cond, gameStatus, board, playerIndex));
 		}
 	}
 	
@@ -640,7 +544,7 @@ public class ComputerPlay implements Runnable {
 			playRules.add(configRule);
 		} else {
 			Logger.warn("Could not find BuildBridge rule in config "+(filename!=null?filename:"UNKNOWN"));
-			playRules.add(new BuildBridge(gameStatus, board));
+			playRules.add(new BuildBridge(gameStatus, board, playerIndex));
 		}
 	}
 	/**
@@ -654,27 +558,17 @@ public class ComputerPlay implements Runnable {
 	 * @param ruleRaastip			Require an adjacent square that is player
 	 */
 	private void setUpFindNumber(HashMap<String, RecruitRule> configRecruitRule, int ntfu, int ntfo, int mastau, int rastau, int ruleRaastip) {
-		int raastipConfig = ruleRaastip;
-		if(raastipConfig <= gameStatus.nativePlayerIndex) {
-			if(raastipConfig == playerIndex) {
-				raastipConfig = CONFIG_US_PLAYER_ID;
-			} else if(playerIndex == gameStatus.nativePlayerIndex) {
-				raastipConfig = CONFIG_NATIVE_PLAYER_ID;
-			} else {
-				raastipConfig = CONFIG_OPPONENT_PLAYER_ID;
-			}
-		}
 		FindNumber configRule = (FindNumber)configRecruitRule.get(
 				"FindNumber"+
-				FindNumber.getConfigDescriptor(ntfu, ntfo, mastau, rastau, raastipConfig));
+				FindNumber.getConfigDescriptor(ntfu, ntfo, mastau, rastau, ruleRaastip, playerIndex, gameStatus));
 		if(configRule != null) {
-			FindNumber rule = new FindNumber(configRule, ruleRaastip);
+			FindNumber rule = new FindNumber(configRule, ruleRaastip, playerIndex);
 			recruitRules.add(rule);
 		} else {
 			Logger.warn("Could not find FindNumber rule "+
-					FindNumber.getConfigDescriptor(ntfu, ntfo, mastau, rastau, raastipConfig)+
+					FindNumber.getConfigDescriptor(ntfu, ntfo, mastau, rastau, ruleRaastip, playerIndex, gameStatus)+
 					" in config "+(filename!=null?filename:"UNKNOWN"));
-			recruitRules.add(new FindNumber(ntfu, ntfo, mastau, rastau, ruleRaastip, gameStatus, board));
+			recruitRules.add(new FindNumber(ntfu, ntfo, mastau, rastau, ruleRaastip, gameStatus, board, playerIndex));
 		}
 	}
 
@@ -805,5 +699,9 @@ public class ComputerPlay implements Runnable {
 			averageScore /= scoreCount;
 		}
 		return averageScore;
+	}
+
+	public Vector<PlayRule> getPlayRules() {
+		return playRules;
 	}
 }

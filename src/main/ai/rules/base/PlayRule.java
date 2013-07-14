@@ -6,13 +6,13 @@ import main.board.Board;
 
 public abstract class PlayRule extends RuleStats {
 	public final Board board;
-	public PlayRule(String name, String description, GameStatus gameStatus, Board board) {
-		super(name, description, gameStatus);
+	public PlayRule(String name, String description, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(name, description, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 	
-	public PlayRule(String name, String description, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(name, description, weighting, order, actor, gameStatus);
+	public PlayRule(String name, String description, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(name, description, weighting, order, actor, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 	

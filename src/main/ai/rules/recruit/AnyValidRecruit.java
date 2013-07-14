@@ -15,13 +15,13 @@ public class AnyValidRecruit extends RecruitRule {
 	
 	private final Board board;
 	
-	public AnyValidRecruit(GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, gameStatus);
+	public AnyValidRecruit(GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 
-	public AnyValidRecruit(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus);
+	public AnyValidRecruit(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, ourPlayerIndex);
 		this.board = board;
 	}
 

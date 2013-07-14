@@ -151,6 +151,16 @@ public class Config {
 	}
 	
 	/**
+	 * Change a config value
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public void setValue(String key, String value) {
+		config.put(key, value);
+	}
+	
+	/**
 	 * Get an config item as the string value
 	 * 
 	 * @param key	config item to get

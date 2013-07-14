@@ -25,9 +25,7 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	/** The number to find on the from square */
 	private int numberToFind = 1;
 	/** Of a specific player (-1 is any player) to find on the to square */
-	private int playerIndex = -1;
-	/** Is this to only find turns that consolidate units */
-	private boolean selfMove = false;
+	private int rulePlayerIndex = -1;
 	
 	/**
 	 * C'tor from config entry for rule
@@ -35,16 +33,14 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	 * @param parts
 	 * @param weight
 	 */
-	public FindANumberThatICanBuildLandTo(String[] parts, int weight, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, gameStatus, board);
+	public FindANumberThatICanBuildLandTo(String[] parts, int weight, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, gameStatus, board, ourPlayerIndex);
 		for(int i=1; i < parts.length; i++) {
 			String[] kv = parts[i].split("=");
 			if(kv[0].equals("ntf")) {
 				this.numberToFind = Integer.parseInt(kv[1]);
 			} else if(kv[0].equals("pi")) {
-				this.playerIndex = Integer.parseInt(kv[1]);
-			} else if(kv[0].equals("sm")) {
-				this.selfMove = Integer.parseInt(kv[1]) == 1;
+				this.rulePlayerIndex = Integer.parseInt(kv[1]);
 			} else if(kv[0].equals("rastau")) {
 				this.requiredAdjacentSquareThatAreUs = Integer.parseInt(kv[1]);
 			}
@@ -53,21 +49,19 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	}
 	
 	// C'tors for random weightings
-	public FindANumberThatICanBuildLandTo(int numberToFind, int playerIndex, boolean selfMove, int requiredAdjacentSquareThatAreUs, GameStatus gameStatus, Board board) {		
-		super(NAME,DESCRIPTION, gameStatus, board);
+	public FindANumberThatICanBuildLandTo(int numberToFind, int playerIndex, int requiredAdjacentSquareThatAreUs, GameStatus gameStatus, Board board, int ourPlayerIndex) {		
+		super(NAME,DESCRIPTION, gameStatus, board, ourPlayerIndex);
 		this.numberToFind = numberToFind;
-		this.playerIndex = playerIndex;
-		this.selfMove = selfMove;
+		this.rulePlayerIndex = playerIndex;
 		this.requiredAdjacentSquareThatAreUs = requiredAdjacentSquareThatAreUs;
 		setAdditionalDescription();
 	}
 	
 	// C'tors for assigned weightings
-	public FindANumberThatICanBuildLandTo(int numberToFind, int playerIndex, boolean selfMove, int requiredAdjacentSquareThatAreUs, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, weighting, order, actor, gameStatus, board);
+	public FindANumberThatICanBuildLandTo(int numberToFind, int playerIndex, int requiredAdjacentSquareThatAreUs, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, weighting, order, actor, gameStatus, board, ourPlayerIndex);
 		this.numberToFind = numberToFind;
-		this.playerIndex = playerIndex;
-		this.selfMove = selfMove;
+		this.rulePlayerIndex = playerIndex;
 		this.requiredAdjacentSquareThatAreUs = requiredAdjacentSquareThatAreUs;
 		setAdditionalDescription();
 	}
@@ -78,8 +72,8 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	 * @param copyRule			Rule to copy
 	 * @param configPlayerIndex	PlayerIndex
 	 */
-	public FindANumberThatICanBuildLandTo(FindANumberThatICanBuildLandTo copyRule, int configPlayerIndex) {
-		this(copyRule.numberToFind, configPlayerIndex, copyRule.selfMove, copyRule.requiredAdjacentSquareThatAreUs, copyRule.weighting, copyRule.order, copyRule.actor, copyRule.gameStatus, copyRule.board);
+	public FindANumberThatICanBuildLandTo(FindANumberThatICanBuildLandTo copyRule, int configPlayerIndex, int ourPlayerIndex) {
+		this(copyRule.numberToFind, configPlayerIndex, copyRule.requiredAdjacentSquareThatAreUs, copyRule.weighting, copyRule.order, copyRule.actor, copyRule.gameStatus, copyRule.board, ourPlayerIndex);
 	}
 
 	/**
@@ -94,28 +88,23 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 			addAdditionalNameDetails(", #"+numberToFind);
 			addAdditionalDescritionDetails(" find "+numberToFind);
 		}
-		if(playerIndex >= 0) {
-			String playerName = gameStatus.players[playerIndex].getName();
+		if(rulePlayerIndex >= 0) {
+			String playerName = gameStatus.players[rulePlayerIndex].getName();
 			addAdditionalNameDetails(", "+playerName);
 			addAdditionalDescritionDetails(" only "+playerName);
 		}
-		if(selfMove) {
-			addAdditionalNameDetails(", consolidate");
-			addAdditionalDescritionDetails(" consolidate");
-		}
 		addConfigDescriptor("rastau="+requiredAdjacentSquareThatAreUs);
 		addConfigDescriptor("ntf="+numberToFind);
-		addConfigDescriptor("pi="+playerIndex);
-		addConfigDescriptor("sm="+(selfMove?"1":"0"));
+		addConfigDescriptor("pi="+rulePlayerIndex);
 	}
 
 	/**
 	 * Set the Player Index
 	 * 
-	 * @param playerIndex	Player Index
+	 * @param rulePlayerIndex	Player Index
 	 */
-	public void setPlayerIndex(int playerIndex) {
-		this.playerIndex = playerIndex;
+	public void setPlayerIndex(int rulePlayerIndex) {
+		this.rulePlayerIndex = rulePlayerIndex;
 	}
 	
 	/**
@@ -124,7 +113,7 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	 * @return
 	 */
 	public int getPlayerIndex() {
-		return playerIndex;
+		return rulePlayerIndex;
 	}
 	
 	/**
@@ -137,7 +126,7 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 	 * 
 	 * @return	ConfigDescriptor
 	 */
-	public static String getConfigDescriptor(int ntf, int pi, boolean sm, int rastau) {
+	public static String getConfigDescriptor(int ntf, int pi, int rastau, int ourPlayerIndex, GameStatus gameStatus) {
 		StringBuffer sb = new StringBuffer(":");
 		sb.append("rastau=");
 		sb.append(rastau);
@@ -145,74 +134,67 @@ public class FindANumberThatICanBuildLandTo extends PlayRule {
 		sb.append(ntf);
 		sb.append(":pi=");
 		sb.append(pi);
-		sb.append(":sm=");
-		sb.append((sm?"1":"0"));
 		return sb.toString();
 	}
 	
 	@Override
 	public ComputerMove getBestMove() {
-		// Discard this rule if it is self move and the player number doesn't match
-		if(playerIndex != -1 && (gameStatus.currentPlayerIndex == playerIndex) != selfMove) return null;
 		int boardWidth = gameStatus.config.getInt(Config.KEY.BOARD_WIDTH.getKey());
 		int boardHeight = gameStatus.config.getInt(Config.KEY.BOARD_HEIGHT.getKey());
 		Player currentPlayer = gameStatus.players[gameStatus.currentPlayerIndex];
-		Player playerToFind = null;;
-		if(playerIndex >= 0) playerToFind = gameStatus.players[playerIndex];
+		Player playerToFind = null;
+		if(rulePlayerIndex >= 0) playerToFind = gameStatus.players[rulePlayerIndex];
 		Square[][] boardArray = board.getBoard();
-		
-		for(int fromX = 0; fromX < boardWidth; fromX++) {
-			for(int fromY = 0; fromY < boardHeight; fromY++) {
-				short fromUnits=boardArray[fromX][fromY].getUnits();
-				if(fromUnits < bridgeCost) continue;
-				// Only care about it if we have more than what we are looking for
-				if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer) || fromUnits <= numberToFind) continue;
-				int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
-				for(int i = 0; i < 4; i++) {
-					int toX = fromX+diffs[i][0];
-					int toY = fromY+diffs[i][1];
-					// Check the to board location is on the board
-					if(toX >= boardWidth || toX < 0 || toY >= boardHeight || toY < 0) continue;
-					Player toOwner = boardArray[toX][toY].getOwner();
-					// Check if we need a specific player
-					if(playerToFind != null && !toOwner.equals(playerToFind)) continue;
-					// This rule can't build bridges
-					if(!toOwner.equals(gameStatus.players[gameStatus.seaPlayerIndex])) continue;
-					// Now check that squares adjacent 4 squares
-					for(int s = 0; s < 4; s++) {
-						int nextToSeaX = toX+diffs[s][0];
-						int nextToSeaY = toY+diffs[s][1];
+		int[] playerIndexes = getPlayerIndexes(rulePlayerIndex);
+		for(int checkPlayerIndex:playerIndexes) {
+			for(int fromX = 0; fromX < boardWidth; fromX++) {
+				for(int fromY = 0; fromY < boardHeight; fromY++) {
+					short fromUnits=boardArray[fromX][fromY].getUnits();
+					if(fromUnits < bridgeCost) continue;
+					// Only care about it if we have more than what we are looking for
+					if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer) || fromUnits <= numberToFind) continue;
+					int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+					for(int i = 0; i < 4; i++) {
+						int toX = fromX+diffs[i][0];
+						int toY = fromY+diffs[i][1];
 						// Check the to board location is on the board
-						if(nextToSeaX >= boardWidth || nextToSeaX < 0 || nextToSeaY >= boardHeight || nextToSeaY < 0) continue;
-						// Check if we are moving to our selves and if that is correct
-						if(boardArray[nextToSeaX][nextToSeaY].getOwner().equals(currentPlayer) != selfMove) {
-							//Logger.trace(selfMove?"Need Self":"Need Not Self");
-							continue;
+						if(toX >= boardWidth || toX < 0 || toY >= boardHeight || toY < 0) continue;
+						Player toOwner = boardArray[toX][toY].getOwner();
+						// Check if we need a specific player
+						if(playerToFind != null && !toOwner.equals(playerToFind)) continue;
+						// This rule can't build bridges
+						if(!toOwner.equals(gameStatus.players[gameStatus.seaPlayerIndex])) continue;
+						// Now check that squares adjacent 4 squares
+						for(int s = 0; s < 4; s++) {
+							int nextToSeaX = toX+diffs[s][0];
+							int nextToSeaY = toY+diffs[s][1];
+							// Check the to board location is on the board
+							if(nextToSeaX >= boardWidth || nextToSeaX < 0 || nextToSeaY >= boardHeight || nextToSeaY < 0) continue;
+							// Check if we are looking at the from square, if so, that doesn't count
+							if(nextToSeaX == fromX && nextToSeaY == fromY) continue;
+							// Check if we found the right number
+							if(boardArray[nextToSeaX][nextToSeaY].getUnits() == numberToFind) {
+								if(requiredAdjacentSquareThatAreUs > 1) {
+									int leftToFind = requiredAdjacentSquareThatAreUs;
+									for(int j = 0; j < 4; j++) {
+										int nearX = toX+diffs[j][0];
+										int nearY = toY+diffs[j][1];
+										// Check the to board location is on the board
+										if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
+										if(boardArray[nearX][nearY].getOwner().equals(checkPlayerIndex)) leftToFind--;
+									}
+									if(leftToFind > 0) {
+										Logger.trace("Needed to find "+leftToFind+" more");
+										continue;
+									}
+								}
+								ComputerMove move = new ComputerMove(new CoOrdinate(fromX,fromY), new CoOrdinate(toX,toY), fromUnits);
+								Logger.debug(gameStatus.currentPlayerIndex+") "+name+":"+move);
+								return move;
+							} else {
+								//Logger.trace("Wrong number, was "+board[nextToSeaX][nextToSeaY].getUnits());
+							}			
 						}
-						// Check if we are looking at the from square, if so, that doesn't count
-						if(nextToSeaX == fromX && nextToSeaY == fromY) continue;
-						// Check if we found the right number
-						if(boardArray[nextToSeaX][nextToSeaY].getUnits() == numberToFind) {
-							if(requiredAdjacentSquareThatAreUs > 1) {
-								int leftToFind = requiredAdjacentSquareThatAreUs;
-								for(int j = 0; j < 4; j++) {
-									int nearX = toX+diffs[j][0];
-									int nearY = toY+diffs[j][1];
-									// Check the to board location is on the board
-									if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
-									if(boardArray[nearX][nearY].getOwner().equals(currentPlayer)) leftToFind--;
-								}
-								if(leftToFind > 0) {
-									Logger.trace("Needed to find "+leftToFind+" more");
-									continue;
-								}
-							}
-							ComputerMove move = new ComputerMove(new CoOrdinate(fromX,fromY), new CoOrdinate(toX,toY), fromUnits);
-							Logger.debug(gameStatus.currentPlayerIndex+") "+name+":"+move);
-							return move;
-						} else {
-							//Logger.trace("Wrong number, was "+board[nextToSeaX][nextToSeaY].getUnits());
-						}			
 					}
 				}
 			}

@@ -21,12 +21,12 @@ public class BuildBridge extends PlayRule {
 	private short bridgeCost = (short)gameStatus.config.getInt(Config.KEY.BUILD_BRIDGE.getKey());
 	
 	// C'tors
-	public BuildBridge(GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, gameStatus, board);
+	public BuildBridge(GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, board, ourPlayerIndex);
 	}
 	
-	public BuildBridge(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board);
+	public BuildBridge(int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board, ourPlayerIndex);
 	}
 
 	@Override

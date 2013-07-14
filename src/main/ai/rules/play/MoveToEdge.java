@@ -28,8 +28,8 @@ public class MoveToEdge extends PlayRule {
 	 * @param parts
 	 * @param weight
 	 */
-	public MoveToEdge(String[] parts, int weight, GameStatus gameStatus, Board board) {
-		super(NAME,DESCRIPTION, gameStatus, board);
+	public MoveToEdge(String[] parts, int weight, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME,DESCRIPTION, gameStatus, board, ourPlayerIndex);
 		for(int i=1; i < parts.length; i++) {
 			String[] kv = parts[i].split("=");
 			if(kv[0].equals("cond")) {
@@ -45,8 +45,8 @@ public class MoveToEdge extends PlayRule {
 	 * 
 	 * @param condition
 	 */
-	public MoveToEdge(CONDITIONS condition, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, gameStatus, board);
+	public MoveToEdge(CONDITIONS condition, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, gameStatus, board, ourPlayerIndex);
 		this.condition = condition;
 		setAdditionalDescription();
 	}
@@ -58,8 +58,8 @@ public class MoveToEdge extends PlayRule {
 	 * @param order
 	 * @param actor
 	 */
-	public MoveToEdge(CONDITIONS condition, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board) {
-		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board);
+	public MoveToEdge(CONDITIONS condition, int weighting, int order, ACTOR actor, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weighting, order, actor, gameStatus, board, ourPlayerIndex);
 		this.condition = condition;
 		setAdditionalDescription();
 	}
@@ -80,7 +80,7 @@ public class MoveToEdge extends PlayRule {
 	 * 
 	 * @return	ConfigDescriptor
 	 */
-	public static String getConfigDescriptor(CONDITIONS cond) {
+	public static String getConfigDescriptorForFile(CONDITIONS cond) {
 		StringBuffer sb = new StringBuffer(":");
 		sb.append("cond=");
 		sb.append(cond);

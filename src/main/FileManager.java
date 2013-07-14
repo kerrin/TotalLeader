@@ -114,7 +114,8 @@ public class FileManager {
 			Logger.error("Unable to save ComputerPlay file: "+f.getAbsolutePath());
 			e.printStackTrace();
 			return;
-		}	
+		}
+		comp.filename = f.getName();
 	}
 
 	/**

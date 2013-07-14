@@ -16,11 +16,13 @@ import main.events.CoOrdinate;
 public class ComputerStart implements Runnable {
 	private final GameStatus gameStatus;
 	private final Board board;
+	private final int ourPlayerIndex;
 	
-	public ComputerStart(GameStatus gameStatus, Board board) {
+	public ComputerStart(GameStatus gameStatus, Board board, int ourPlayerIndex) {
 		super();
 		this.gameStatus = gameStatus;
 		this.board = board;
+		this.ourPlayerIndex = ourPlayerIndex;
 	}
 
 	// TODO: Start Place Rules
@@ -31,10 +33,10 @@ public class ComputerStart implements Runnable {
 		// TODO: NearNumber()
 		// TODO: FarFromOthers()
 		// TODO: NearSea
-		StartRule rule = new PickAreaWithLowNumbers(gameStatus, board);
+		StartRule rule = new PickAreaWithLowNumbers(gameStatus, board, ourPlayerIndex);
 		CoOrdinate loc = rule.getBestStart();
 		if(loc == null) {
-			rule = new BasedOnPlayerNumber(gameStatus);
+			rule = new BasedOnPlayerNumber(gameStatus, ourPlayerIndex);
 			loc = rule.getBestStart();
 		}
 		ComputerSelectThread.spawnComputerSelectThread(loc, gameStatus, board);

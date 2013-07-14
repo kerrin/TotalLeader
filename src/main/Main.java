@@ -93,7 +93,7 @@ public class Main {
 			for(gameStatus.currentPlayerIndex = 0; gameStatus.currentPlayerIndex < numPlayers; gameStatus.currentPlayerIndex++) {
 				Player currentPlayer = gameStatus.players[gameStatus.currentPlayerIndex];
 				if(currentPlayer.getType() == TYPE.COMPUTER) {
-					new Thread(new ComputerStart(gameStatus, board)).start();
+					new Thread(new ComputerStart(gameStatus, board, gameStatus.currentPlayerIndex)).start();
 					gameStatus.computerAi[gameStatus.currentPlayerIndex] = ComputerPlay.getComputerPlayer(gameStatus.currentPlayerIndex, gameStatus, board);
 					String filename = gameStatus.computerAi[gameStatus.currentPlayerIndex].filename;
 					Logger.info("Using Computer "+(filename==null?"New":filename));
