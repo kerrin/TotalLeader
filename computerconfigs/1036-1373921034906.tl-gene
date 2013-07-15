@@ -1,4 +1,4 @@
-SCORE=728
+SCORE=933,1041,1364,806
 PLAY
 FindANumberNearMe:rastau=4:ntf=0:pi=0>w=9
 FindANumberNearMe:rastau=4:ntf=1:pi=0>w=70

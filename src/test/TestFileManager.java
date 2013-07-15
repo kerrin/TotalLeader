@@ -49,7 +49,7 @@ public class TestFileManager extends TestCase {
 		File[] files = FileManager.listAllFiles(gameStatus);
 		for(File file:files) {
 			if(file.getName().startsWith("270")) {
-				//file.delete();
+				file.delete();
 			}
 		}
 	}
@@ -65,12 +65,12 @@ public class TestFileManager extends TestCase {
 		ComputerPlay compLoaded = FileManager.loadComputerPlayer(comp.filename, 0, gameStatus, board);
 		FileManager.saveComputerPlayer(compLoaded, gameStatus, board);
 		ComputerPlay compLoaded2 = FileManager.loadComputerPlayer(compLoaded.filename, 0, gameStatus, board);
-		deepCompareComputer(compLoaded,compLoaded2);
+		deepCompareComputer(compLoaded,compLoaded2, 1);
 		Logger.info("Compare to original computer");
-		deepCompareComputer(comp,compLoaded2);
+		deepCompareComputer(comp,compLoaded2, 2);
 	}
 
-	private void deepCompareComputer(ComputerPlay comp1, ComputerPlay comp2) {
+	private void deepCompareComputer(ComputerPlay comp1, ComputerPlay comp2, int fromConfigCount) {
 		Vector<PlayRule> playRules1 = comp1.getPlayRules();
 		Vector<PlayRule> playRules2 = comp2.getPlayRules();
 		assertEquals(playRules1.size(), playRules2.size());
@@ -86,8 +86,17 @@ public class TestFileManager extends TestCase {
 					loaded.weighting, 
 					saved.equals(loaded));
 		}
-		
+		String config1 = comp1.getConfigFileContents();
+		String config2 = comp2.getConfigFileContents();
+		while(fromConfigCount > 0) {
+			config2 = TestRig.stripSecondScore(config2);
+			fromConfigCount--;
+		}
+		if(!config1.equals(config2)) {
+			Logger.info(config1);
+			Logger.info(config2);
+		}
 		assertTrue("Saved file did not recreate config correctly", 
-				comp1.getConfigFileContents().equals(comp2.getConfigFileContents()));
+				config1.equals(config2));
 	}
 }

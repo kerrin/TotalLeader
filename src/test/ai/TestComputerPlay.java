@@ -2,7 +2,10 @@ package test.ai;
 
 import java.awt.Color;
 
+import test.TestRig;
+
 import main.GameStatus;
+import main.Logger;
 import main.ai.ComputerPlay;
 import main.board.Board;
 import main.config.Config;
@@ -52,10 +55,21 @@ public class TestComputerPlay extends TestCase {
 		String compConfig = comp.getConfigFileContents();
 		ComputerPlay compFromConfig = new ComputerPlay("test", compConfig, 0, gameStatus,board);
 		
+		String compFromConfigConfig = compFromConfig.getConfigFileContents();
+		String compConf = comp.getConfigFileContents();
+		compFromConfigConfig = TestRig.stripSecondScore(compFromConfigConfig);
+		
+		if(!compFromConfigConfig.equals(comp.getConfigFileContents())) {
+			Logger.info(compFromConfigConfig);
+			Logger.info(compConf);
+		}
+
 		assertTrue("getConfigFileContents returned different results for compFromConfig!", 
 				compFromConfig.getConfigFileContents().equals(compFromConfig.getConfigFileContents()));
 		
 		assertTrue("getConfigFileContents returned different results for comp and compFromConfig!", 
-				compFromConfig.getConfigFileContents().equals(comp.getConfigFileContents()));
+				compFromConfigConfig.equals(compConf));
 	}
+
+	
 }

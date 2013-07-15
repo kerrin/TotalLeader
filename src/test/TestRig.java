@@ -1,9 +1,22 @@
 package test;
 
-import junit.framework.TestCase;
+import test.ai.TestComputerPlay;
+import test.ai.TestComputerPlayConfig;
+import junit.framework.TestSuite;
 
-public class TestRig extends TestCase {
-	public void testRig() {
-		
+public class TestRig extends TestSuite {
+	public void testSuite() {
+		TestSuite suite = new TestSuite();
+		suite.addTest(new TestFileManager());
+		suite.addTest(new TestComputerPlay());
+		suite.addTest(new TestComputerPlayConfig());
+	}
+	
+	public static String stripSecondScore(String compConfig) {
+		int firstEquals = compConfig.indexOf("=");
+		int firstComma = compConfig.indexOf(",");
+		String temp = compConfig.substring(0,firstEquals+1);
+		temp += compConfig.substring(firstComma+1);
+		return temp;
 	}
 }
