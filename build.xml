@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project TotalLeader">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="C:/Users/Kerrin/workspace/TotalLeader/build/TotalLeader.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Main-Class" value="main.Main"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="G:/Users/Kerrin/GIT/TotalLeader/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="E:/Program Files (x86)/eclipse/plugins/org.junit_3.8.2.v20080602-1318/junit.jar"/>
+        </jar>
+    </target>
+</project>

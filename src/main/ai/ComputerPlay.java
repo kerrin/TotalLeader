@@ -44,7 +44,8 @@ public class ComputerPlay implements Runnable {
 		RANDOM, 	// A random player
 		MERGE, 		// Combine 2 players to be come a new player
 		MODIFIED, 	// A random player with random modifications
-		POTLUCK;	// Randomly pick from other type (except Best);
+		POTLUCK,	// Randomly pick from other type (except Best)
+		NOTNEW;		// Randomly pick from other type (except Best and New)
 
 		public static TYPE fromString(String typeStr) {
 			TYPE[] values = TYPE.values();
@@ -591,10 +592,12 @@ public class ComputerPlay implements Runnable {
 		ComputerPlay.TYPE type = ComputerPlay.TYPE.fromString(typeStr);
 		File[] files = FileManager.listAllFiles(gameStatus);
 		Logger.info("Computer Player "+playerIndex+" is type " + type.name());
-		if(type == TYPE.POTLUCK) {
+		while(type == TYPE.POTLUCK || type == TYPE.NOTNEW) {
+			boolean wasNotNew = type == TYPE.NOTNEW;
 			int random = (int)(Math.random()*(TYPE.values().length-2))+1;
 			type = TYPE.values()[random];
 			Logger.info("Computer Player "+playerIndex+" is now type " + type.name());
+			if(wasNotNew && type == TYPE.NEW) type = TYPE.NOTNEW;
 		}
 		switch (type) {
 		case NEW:
@@ -630,7 +633,7 @@ public class ComputerPlay implements Runnable {
 			int random2 = random;
 			while(random == random2) random2 = (int)(Math.random()*files.length);
 			ComputerPlay mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
-			ComputerPlay mergeComp2 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
+			ComputerPlay mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board);
 			mergeComp1.mergeGene(mergeComp2);
 			return mergeComp1;
 		default:

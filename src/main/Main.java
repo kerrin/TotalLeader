@@ -95,8 +95,6 @@ public class Main {
 				if(currentPlayer.getType() == TYPE.COMPUTER) {
 					new Thread(new ComputerStart(gameStatus, board, gameStatus.currentPlayerIndex)).start();
 					gameStatus.computerAi[gameStatus.currentPlayerIndex] = ComputerPlay.getComputerPlayer(gameStatus.currentPlayerIndex, gameStatus, board);
-					String filename = gameStatus.computerAi[gameStatus.currentPlayerIndex].filename;
-					Logger.info("Using Computer "+(filename==null?"New":filename));
 				} else {
 					// In case we change player type progmatically
 					gameStatus.computerAi[gameStatus.currentPlayerIndex] = null;
@@ -125,7 +123,10 @@ public class Main {
 					lastTurn = gameStatus.currentTurn;
 					lastTurnChange = System.currentTimeMillis();
 				} else if(lastTurnChange + TOO_LONG < System.currentTimeMillis()) {
-					if(Logger.setLevel(LEVEL.TRACE)) Logger.trace("Delayed, so setting logger to trace");
+					if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) == 1) {
+						Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
+						gameStatus.gameState = GameState.GAME_OVER;
+					}
 				}
 				gameStatus.display.repaint();
 			}

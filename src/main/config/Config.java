@@ -25,7 +25,7 @@ public class Config {
 		 * Modified		A random player with random modifications
 		 * PotLuck		Randomly pick from other type (except Best)
 		 */
-		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Merge","Random","PotLuck","Best","Modified"}),
+		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Merge","Random","NotNew","Best","Modified"}),
 		
 		/** The colors of the players */
 		PLAYER_COLOR("player_color",new String[]{"16711680","8421376","8388736","32896","16581375"}),
@@ -68,10 +68,10 @@ public class Config {
 		
 		/** If the game is to play it self to generate good computer players */
 		AUTO_PLAY("auto_play","1"),
-		/** The chance we won't modify another play rule during randomisation */
-		MODIFY_PLAY_GENE_CHANCE("modify_gene_chance_play","10"),
-		/** The chance we won't modify another play rule during randomisation */
-		MODIFY_RECRUIT_GENE_CHANCE("modify_gene_chance_recruit","10"), 
+		/** The chance we won't modify another play rule during randomisation (1/x that we stop) */
+		MODIFY_PLAY_GENE_CHANCE("modify_gene_chance_play","150"),
+		/** The chance we won't modify another play rule during randomisation (1/x that we stop) */
+		MODIFY_RECRUIT_GENE_CHANCE("modify_gene_chance_recruit","200"), 
 		
 		/** 
 		 * If the computer player once picked a place to recruit, keeps adding to it until full before picking a new square

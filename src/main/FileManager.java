@@ -38,6 +38,7 @@ public class FileManager {
 	 * @return
 	 */
 	public static ComputerPlay loadComputerPlayer(String filename, int playerIndex, GameStatus gameStatus, Board board) {
+		Logger.info("Loading: "+filename);
 		FileInputStream istream;
 		String fileAndPath = gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+filename;
 		File f = new File(fileAndPath);
@@ -79,13 +80,13 @@ public class FileManager {
 		//		740 = 20 * 20 / 5 * 8
 		//		533 = 20 * 20 / 6 * 8
 		double lowScoreThreshold = board.getHeight() * board.getWidth() / (gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey()));
-		double highScoreThreshold = lowScoreThreshold * 8.0;
-		lowScoreThreshold *= 6.0;
+		double highScoreThreshold = lowScoreThreshold * 10.0;
+		lowScoreThreshold *= 8.0;
 
 		int compScore = comp.getAverageScore();
 		// Save the winner always, and save back any unchanged players with the new score, or high scores
 		if(comp.filename == null && !comp.winner && compScore < highScoreThreshold) {
-			Logger.info("Not saving "+ gameStatus.players[comp.getPlayerIndex()].getName()+" as it didn't win and score was below "+highScoreThreshold+".");
+			Logger.info("Not saving "+ gameStatus.players[comp.getPlayerIndex()].getName()+" as it didn't win and score was below hi threashold of "+highScoreThreshold+".");
 			return;
 		}
 		// If the average score is low, throw away the computer player
