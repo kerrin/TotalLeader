@@ -19,13 +19,14 @@ public class Config {
 		/** 
 		 * The types of computer players:
 		 * Best 		The highest ranked player
+		 * Top10 		One of the highest 10 ranked players
 		 * New			A random new player
 		 * Random		A random player (not best)
 		 * Merge		Combine 2 players to be come a new player
 		 * Modified		A random player with random modifications
 		 * PotLuck		Randomly pick from other type (except Best)
 		 */
-		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Merge","Random","NotNew","Best","Modified"}),
+		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Merge","Random","NotNew","Top50","Modified"}),
 		
 		/** The colors of the players */
 		PLAYER_COLOR("player_color",new String[]{"16711680","8421376","8388736","32896","16581375"}),

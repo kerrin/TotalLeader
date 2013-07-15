@@ -39,13 +39,16 @@ import main.events.CoOrdinate;
  */
 public class ComputerPlay implements Runnable {
 	public enum TYPE {
-		BEST, 		// The highest ranked player. Must be first or POTLUCK breaks
+		BEST, 		// The highest ranked player. Must be first or POTLUCK/NOTNEW breaks
+		TOP10, 		// The 10 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
+		TOP50, 		// The 50 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
+		TOP100,		// The 100 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
 		NEW, 		// A random new player
 		RANDOM, 	// A random player
 		MERGE, 		// Combine 2 players to be come a new player
 		MODIFIED, 	// A random player with random modifications
-		POTLUCK,	// Randomly pick from other type (except Best)
-		NOTNEW;		// Randomly pick from other type (except Best and New)
+		POTLUCK,	// Randomly pick from other type (except Best, Top 10)
+		NOTNEW;		// Randomly pick from other type (except Best, Top 10 and New)
 
 		public static TYPE fromString(String typeStr) {
 			TYPE[] values = TYPE.values();
@@ -593,32 +596,50 @@ public class ComputerPlay implements Runnable {
 		File[] files = FileManager.listAllFiles(gameStatus);
 		Logger.info("Computer Player "+playerIndex+" is type " + type.name());
 		while(type == TYPE.POTLUCK || type == TYPE.NOTNEW) {
-			boolean wasNotNew = type == TYPE.NOTNEW;
-			int random = (int)(Math.random()*(TYPE.values().length-2))+1;
+			int exclude = 4;
+			if(type == TYPE.NOTNEW) exclude = 5;
+			int random = (int)(Math.random()*(TYPE.values().length-(exclude+1)))+exclude;
 			type = TYPE.values()[random];
 			Logger.info("Computer Player "+playerIndex+" is now type " + type.name());
-			if(wasNotNew && type == TYPE.NEW) type = TYPE.NOTNEW;
 		}
 		switch (type) {
 		case NEW:
 			return new ComputerPlay(playerIndex, gameStatus, board);
 		
-		case BEST:
-			File best = null;
-			int bestScore = 0;
+		case BEST: case TOP10: case TOP50: case TOP100:
+			int highest = 0;
+			HashMap<Integer,Vector<File>> bestScores = new HashMap<Integer,Vector<File>>();
 			for(File file:files) {
 				String[] parts = file.getName().split("-");
 				int thisScore = Integer.parseInt(parts[0]);
-				if(best == null || thisScore > bestScore) {
-					best = file;
-					bestScore = thisScore;
+				if(thisScore > highest) highest = thisScore;
+				Vector<File> filesAtScore;
+				if(bestScores.containsKey(thisScore)) {
+					filesAtScore = bestScores.get(thisScore);
+				} else {
+					filesAtScore = new Vector<File>();
 				}
+				filesAtScore.add(file);
+				bestScores.put(thisScore, filesAtScore);
 			}
-			ComputerPlay bestComp = FileManager.loadComputerPlayer(best.getName(), playerIndex, gameStatus, board);
-			return bestComp;
+			int howMany = 1;
+			if(type == TYPE.TOP10) howMany = 10;
+			if(type == TYPE.TOP50) howMany = 50;
+			if(type == TYPE.TOP100) howMany = 100;
+			int random = (int)(Math.random()*howMany);
+			Vector<File> filesAtScore = new Vector<File>();
+			while(random >= 0) {
+				if(bestScores.containsKey(highest)) {
+					filesAtScore = bestScores.get(highest);
+					random--;
+				}
+				highest--;
+			}
+			random = (int)(Math.random()*filesAtScore.size());
+			return FileManager.loadComputerPlayer(filesAtScore.get(random).getName(), playerIndex, gameStatus, board);
 		
 		case RANDOM: 
-			int random = (int)(Math.random()*files.length);
+			random = (int)(Math.random()*files.length);
 			ComputerPlay randComp = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
 			return randComp;
 		
