@@ -123,9 +123,9 @@ public class FileManager {
 	 *  
 	 * @param computerPlay
 	 */
-	public static void deletePreviousFile(ComputerPlay computerPlay, GameStatus gameStatus) {
-		if(computerPlay.filename == null) return;
-		File deleteFile = new File(gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+computerPlay.filename);
+	public static void deletePreviousFile(String filename, GameStatus gameStatus) {
+		if(filename == null) return;
+		File deleteFile = new File(gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+filename);
 		deleteFile.delete();
 	}
 

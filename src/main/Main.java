@@ -144,8 +144,9 @@ public class Main {
 				gameStatus.computerAi[gameStatus.winner.getPlayerIndex()].winner = true;
 			}
 			for(ComputerPlay comp:gameStatus.computerAi) {
+				String previousFilename = comp.filename;
 				FileManager.saveComputerPlayer(comp, gameStatus, board);
-				FileManager.deletePreviousFile(comp, gameStatus);
+				FileManager.deletePreviousFile(previousFilename, gameStatus);
 			}
 			if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) > 0) gameStatus.gameState = GameState.INIT;
 		}

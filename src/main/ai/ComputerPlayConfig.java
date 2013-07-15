@@ -38,12 +38,12 @@ public class ComputerPlayConfig {
 		String[] kv = lines[i].split("=");
 		String[] scoresStrings = kv[1].split(",");
 		scores = new int[scoresStrings.length];
-		i=0;
+		int j=0;
 		for(String scoreString:scoresStrings) {
-			scores[i++] = Integer.parseInt(scoreString);
+			scores[j++] = Integer.parseInt(scoreString);
 		}
 		
-		for(/*I set already*/;i < lines.length;i++) {
+		for(i++;i < lines.length;i++) {
 			lines[i] = lines[i].trim();
 			if(lines[i].isEmpty()) {
 				continue;

@@ -17,7 +17,6 @@ import main.ai.ComputerMove;
 import main.ai.rules.base.PlayRule;
 import main.ai.rules.base.RecruitRule;
 import main.ai.rules.base.RuleStats;
-import main.ai.rules.base.RuleStats.ACTOR;
 import main.ai.rules.play.AnyValidMove;
 import main.ai.rules.play.BuildBridge;
 import main.ai.rules.play.FindANumberNearMe;
