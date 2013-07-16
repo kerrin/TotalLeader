@@ -46,6 +46,8 @@ public class Main {
 	
 	public static GameStatus gameStatus;
 	public static Board board;
+
+	private static boolean stalled;
 	
 	/**
 	 * @param args
@@ -126,12 +128,16 @@ public class Main {
 					if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) == 1) {
 						Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
 						gameStatus.gameState = GameState.GAME_OVER;
+						stalled = true;
 					}
 				}
 				gameStatus.display.repaint();
 			}
-			ComputerPlay.waitComputerPlayer();
-			NextPlayerThread.waitOnPlayerDone();
+			if(!stalled) {
+				ComputerPlay.waitComputerPlayer();
+				NextPlayerThread.waitOnPlayerDone();
+			}
+			stalled = false;
 			Logger.info("=============Game Over=============");
 			// Show scores
 			gameStatus.winner = gameStatus.players[0];
