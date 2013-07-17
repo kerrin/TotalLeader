@@ -19,14 +19,14 @@ public class Config {
 		/** 
 		 * The types of computer players:
 		 * Best 		The highest ranked player
-		 * Top10 		One of the highest 10 ranked players
+		 * Top10/50/100 One of the highest 10/50/100 ranked players
 		 * New			A random new player
 		 * Random		A random player (not best)
 		 * Merge		Combine 2 players to be come a new player
 		 * Modified		A random player with random modifications
 		 * PotLuck		Randomly pick from other type (except Best)
 		 */
-		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Merge","Random","NotNew","Top50","Modified"}),
+		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Best","Top10","Random","Top50","Merge"}),
 		
 		/** The colors of the players */
 		PLAYER_COLOR("player_color",new String[]{"16711680","8421376","8388736","32896","16581375"}),
@@ -157,6 +157,18 @@ public class Config {
 	 */
 	public void setValue(String key, String value) {
 		config.put(key, value);
+	}
+	
+	/**
+	 * Change a config value list
+	 * 
+	 * @param key
+	 * @param values
+	 */
+	public void setValueList(String key, String[] values) {
+		for(int i=0; i < values.length; i++) {
+			config.put(key+i, values[i]);
+		}
 	}
 	
 	/**

@@ -40,6 +40,35 @@ public class PrivateAccessor {
     }
     
     /**
+     * Get a private object
+     * @param obj - Object to get private attribute of
+     * @param fieldName - Field name of attribute
+     * @return Object reference to private attribute 
+      */
+     public static <T> void setPrivateField(Object obj, String fieldName, T setValue) {
+            Assert.assertNotNull(obj);
+            Assert.assertNotNull(fieldName);
+            
+            // Find the field
+            final Field fields[] = obj.getClass().getDeclaredFields();
+            int i=0;
+            while(i < fields.length && !fields[i].getName().equals(fieldName)) { i++; }
+            if(i < fields.length) {
+                   fields[i].setAccessible(true);
+                   try {
+                         fields[i].set(obj, setValue);
+                   } catch (IllegalArgumentException e) {
+                         Assert.fail("Somehow the field name has disappeared after we found it");
+                   } catch (IllegalAccessException e) {
+                         Assert.fail("Something has gone wrong with the field access workaround");
+                   }                    
+            } else {
+                   Assert.fail("Missing field " + fieldName);
+            }
+            return;
+     }
+     
+    /**
     * Allows the invocation of a private method
     * @param obj - Object the method belongs to
     * @param methodName - Name of the method

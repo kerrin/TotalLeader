@@ -2,6 +2,7 @@ package test;
 
 import test.ai.TestComputerPlay;
 import test.ai.TestComputerPlayConfig;
+import test.events.EventManagerTest;
 import junit.framework.TestSuite;
 
 public class TestRig extends TestSuite {
@@ -10,6 +11,7 @@ public class TestRig extends TestSuite {
 		suite.addTest(new TestFileManager());
 		suite.addTest(new TestComputerPlay());
 		suite.addTest(new TestComputerPlayConfig());
+		suite.addTest(new EventManagerTest());
 	}
 	
 	public static String stripSecondScore(String compConfig) {
