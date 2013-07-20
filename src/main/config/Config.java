@@ -2,6 +2,8 @@ package main.config;
 
 import java.util.HashMap;
 
+import main.FileManager;
+
 public class Config {
 	public enum KEY {
 		/** The starting debug level */
@@ -32,7 +34,7 @@ public class Config {
 		PLAYER_COLOR("player_color",new String[]{"16711680","8421376","8388736","32896","16581375"}),
 		
 		/** Where to save and load the computer configs from */
-		BASE_COMPUTER_CONFIG_PATH("computer_config_path","G:\\Users\\Kerrin\\GIT\\TotalLeader\\computerconfigs\\"),
+		BASE_COMPUTER_CONFIG_PATH("computer_config_path","C:\\tl-config\\"),
 		
 		/** Y Axis Size */
 		BOARD_HEIGHT("board_height", "20"), 
@@ -136,7 +138,7 @@ public class Config {
 	/**
 	 * c'tor
 	 */
-	public Config() {
+	public Config(String defaultConfigDir) {
 		config = new HashMap<String,String>();
 		for(KEY key:KEY.values()) {
 			if(key.defaultValue != null) {
@@ -147,8 +149,41 @@ public class Config {
 				}
 			}
 		}
+		char[] data = FileManager.loadFile(defaultConfigDir+"tl.config", false);
+		if(data == null) return;
+		parseConfigFile(new String(data));
 	}
 	
+	/**
+	 * Parse a config file
+	 * 
+	 * @param configString
+	 */
+	private void parseConfigFile(String configString) {
+		String[] lines = configString.split("\n");
+		for(int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+			lines[lineIndex] = lines[lineIndex].trim();
+			if(lines[lineIndex].isEmpty() || lines[lineIndex].startsWith("--")) continue;
+			String[] parts = lines[lineIndex].split("=");
+			String[] values = parts[1].split(",");
+			if(values.length > 1) {
+				for(int valueIndex = 0; valueIndex < values.length; valueIndex++) {
+					String key = parts[0];
+					String value = values[valueIndex];
+					if(config.containsKey(key)) {				
+						config.put(key, value);
+					}
+				}
+			} else {
+				String key = parts[0];
+				String value = values[0];
+				if(config.containsKey(key)) {				
+					config.put(key, value);
+				}
+			}
+		}
+	}
+
 	/**
 	 * Change a config value
 	 * 

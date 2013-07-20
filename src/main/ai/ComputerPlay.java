@@ -113,6 +113,8 @@ public class ComputerPlay implements Runnable {
 	 * C'tor
 	 * 
 	 * @param playerIndex	My index in the players array
+	 * @param gameStatus
+	 * @param board
 	 */
 	public ComputerPlay(int playerIndex, GameStatus gameStatus, Board board) {
 		this.playerIndex = playerIndex;
@@ -602,6 +604,10 @@ public class ComputerPlay implements Runnable {
 			type = TYPE.values()[random];
 			Logger.info("Computer Player "+playerIndex+" is now type " + type.name());
 		}
+		// If there are no configs, only new will work
+		if(files.length < 1) {
+			type = TYPE.NEW;
+		}
 		switch (type) {
 		case NEW:
 			return new ComputerPlay(playerIndex, gameStatus, board);
@@ -626,9 +632,10 @@ public class ComputerPlay implements Runnable {
 			if(type == TYPE.TOP10) howMany = 10;
 			if(type == TYPE.TOP50) howMany = 50;
 			if(type == TYPE.TOP100) howMany = 100;
+			if(howMany > files.length) howMany = files.length;
 			int random = (int)(Math.random()*howMany);
 			Vector<File> filesAtScore = new Vector<File>();
-			while(random >= 0) {
+			while(random >= 0 && highest > 0) {
 				if(bestScores.containsKey(highest)) {
 					filesAtScore = bestScores.get(highest);
 					random--;
@@ -724,6 +731,11 @@ public class ComputerPlay implements Runnable {
 		return averageScore;
 	}
 
+	/**
+	 * Get all the play rules
+	 * 
+	 * @return
+	 */
 	public Vector<PlayRule> getPlayRules() {
 		return playRules;
 	}

@@ -22,7 +22,13 @@ public class Logger {
 		}
 	}
 	
+	private static GameStatus gameStatus;
+	
 	private static LEVEL level = LEVEL.INFO;
+	
+	public static void init(GameStatus thisGameStatus) {
+		gameStatus = thisGameStatus;
+	}
 	
 	public static boolean setLevel(LEVEL level) {
 		if(level == Logger.level) return false;
@@ -33,6 +39,9 @@ public class Logger {
 	private static boolean message(LEVEL messageLevel, String message) {
 		if(messageLevel.id <= level.id) {
 			System.out.println(getLevelName(messageLevel)+getLocation()+message);
+			if(gameStatus != null) {
+				gameStatus.display.outputDebug(message);
+			}
 			return true;
 		}
 		return false;

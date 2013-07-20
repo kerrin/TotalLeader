@@ -42,6 +42,8 @@ import main.player.Player.TYPE;
  *
  */
 public class Main {
+	private static final String DEFAULT_CONFIG_DIR = "C:\\tl-config\\";
+
 	public static final long TOO_LONG = 100000;
 	
 	public static GameStatus gameStatus;
@@ -54,7 +56,8 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		gameStatus = new GameStatus();
-		gameStatus.config = new Config();
+		gameStatus.config = new Config(DEFAULT_CONFIG_DIR);
+		Logger.init(gameStatus);
 		Logger.setLevel(LEVEL.fromString(gameStatus.config.getString(Config.KEY.DEBUG_LEVEL.getKey())));
 		gameStatus.computerAi = new ComputerPlay[gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey())];
 		board = new Board(
@@ -69,6 +72,23 @@ public class Main {
 		gameStatus.seaPlayerIndex = numPlayers+1;
 		
 		gameStatus.display = new Display();
+
+		gameStatus.display.init(gameStatus, board);
+		// Create and use a default config dir if the config one doesn't exist
+		while(!FileManager.canReadConfigs(gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey()))) {
+			for(gameStatus.currentPlayerIndex = 0; gameStatus.currentPlayerIndex < numPlayers; gameStatus.currentPlayerIndex++) {
+				int color = gameStatus.config.getInt(Config.KEY.PLAYER_COLOR.getKey(),gameStatus.currentPlayerIndex);
+				String typeStr = gameStatus.config.getString(Config.KEY.PLAYER_TYPE.getKey(),gameStatus.currentPlayerIndex);
+				Player.TYPE type = Player.TYPE.fromString(typeStr);
+				gameStatus.players[gameStatus.currentPlayerIndex] = 
+					new Player(gameStatus.currentPlayerIndex, type, "Player "+gameStatus.currentPlayerIndex, new Color(color), gameStatus, board);
+				gameStatus.humanPlaying = gameStatus.humanPlaying || type == TYPE.PLAYER;
+			}
+			gameStatus.config.setValue(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey(), DEFAULT_CONFIG_DIR);
+			FileManager.createConfigDir(gameStatus, board);
+			gameStatus.display.repaint();
+		}
+		
 		while(gameStatus.gameState == GameState.INIT) {		
 			gameStatus.players[gameStatus.nativePlayerIndex] = 
 				new Player(gameStatus.nativePlayerIndex, Player.TYPE.NATIVE, "Natives", Color.GREEN, gameStatus, board);

@@ -6,6 +6,7 @@ import test.events.EventManagerTest;
 import junit.framework.TestSuite;
 
 public class TestRig extends TestSuite {
+	public static final String DEFAULT_CONFIG_DIR = "G:\\Users\\Kerrin\\GIT\\TotalLeader\\test\\computerconfigs\\";
 	public void testSuite() {
 		TestSuite suite = new TestSuite();
 		suite.addTest(new TestFileManager());

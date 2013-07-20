@@ -21,8 +21,8 @@ public class TestComputerPlay extends TestCase {
 		int playerNumber = 4;
 		int maxTurns = 100;
 		gameStatus = new GameStatus(); 
-		gameStatus.config = new Config();
-		gameStatus.config.setValue(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey(), "G:\\Users\\Kerrin\\GIT\\TotalLeader\\test\\computerconfigs\\");
+		gameStatus.config = new Config(TestRig.DEFAULT_CONFIG_DIR);
+		gameStatus.config.setValue(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey(), TestRig.DEFAULT_CONFIG_DIR);
 		gameStatus.config.setValue(Config.KEY.NUMBER_PLAYERS.getKey(), ""+playerNumber);
 		gameStatus.config.setValue(Config.KEY.GAME_TURNS.getKey(), ""+maxTurns);
 		gameStatus.players = new Player[playerNumber+2];

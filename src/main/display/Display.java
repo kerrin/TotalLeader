@@ -1,6 +1,5 @@
 package main.display;
 
-
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
@@ -36,7 +35,10 @@ public class Display extends JFrame {
         setLocationRelativeTo(null);
 		inputText = new JTextArea();
 		inputText.addKeyListener(new Keyboard(gameStatus));
-		add(inputText);
+		inputText.setEditable(false);
+		inputText.setSize(1, 1);
+		inputText.setAutoscrolls(true);
+		
 		
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -48,6 +50,15 @@ public class Display extends JFrame {
 	
 	public void newBoard(Board board) {
 		boardDisplay = new BoardDisplay(board, gameStatus);
+		add(inputText);
 		add(boardDisplay);
+	}
+
+	public void outputDebug(String message) {
+		String text = inputText.getText();
+		text = message+"\n"+text;
+		int length = text.length();
+		if(length > 800) length = 800;
+		inputText.setText(text.substring(0,length));
 	}
 }
