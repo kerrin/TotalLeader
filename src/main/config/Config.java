@@ -168,7 +168,7 @@ public class Config {
 			String[] values = parts[1].split(",");
 			if(values.length > 1) {
 				for(int valueIndex = 0; valueIndex < values.length; valueIndex++) {
-					String key = parts[0];
+					String key = parts[0]+valueIndex;
 					String value = values[valueIndex];
 					if(config.containsKey(key)) {				
 						config.put(key, value);

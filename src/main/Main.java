@@ -170,10 +170,16 @@ public class Main {
 			if(gameStatus.players[gameStatus.winner.getPlayerIndex()].getType() == TYPE.COMPUTER) {
 				gameStatus.computerAi[gameStatus.winner.getPlayerIndex()].winner = true;
 			}
+			int i = 0;
 			for(ComputerPlay comp:gameStatus.computerAi) {
+				if(gameStatus.players[i].getType() == TYPE.PLAYER) {
+					i++;
+					continue;
+				}
 				String previousFilename = comp.filename;
 				FileManager.saveComputerPlayer(comp, gameStatus, board);
 				FileManager.deletePreviousFile(previousFilename, gameStatus);
+				i++;
 			}
 			if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) > 0) gameStatus.gameState = GameState.INIT;
 		}
