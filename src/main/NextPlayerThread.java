@@ -31,10 +31,25 @@ public class NextPlayerThread implements Runnable {
 		playerTurnLockedBy = Utils.niceStackTrace(new Throwable().getStackTrace());
 	}
 
+	/**
+	 * Wait for the player to finish
+	 */
 	public static synchronized void waitOnPlayerDone() {
+		waitOnPlayerDone(-1);
+	}
+	
+	/**
+	 * Wait for the player to finish
+	 * 
+	 * @param timeout 	Maximum milliseconds to wait
+	 * 
+	 * @return	Forced unlock
+	 */
+	public static synchronized boolean waitOnPlayerDone(int timeout) {
+		long startWaiting = System.currentTimeMillis();
 		Logger.debug("Waiting on playerDone");
 		boolean output = false;
-		while(playerTurnLockedBy != null) {
+		while(playerTurnLockedBy != null && (timeout == -1 || startWaiting + timeout < System.currentTimeMillis())) {
 			if(!output) {
 				output = Logger.trace("Waiting on "+playerTurnLockedBy);
 			}
@@ -44,6 +59,13 @@ public class NextPlayerThread implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+		
+		if(playerTurnLockedBy != null) {
+			playerTurnLockedBy = null;
+			return true;
+		} else {
+			return false;
 		}
 	}
 	

@@ -145,7 +145,8 @@ public class Main {
 					lastTurn = gameStatus.currentTurn;
 					lastTurnChange = System.currentTimeMillis();
 				} else if(lastTurnChange + TOO_LONG < System.currentTimeMillis()) {
-					if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) == 1) {
+					if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) == 1 && 
+							gameStatus.players[gameStatus.currentPlayerIndex].getType() != Player.TYPE.PLAYER) {
 						Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
 						gameStatus.gameState = GameState.GAME_OVER;
 						stalled = true;
@@ -154,8 +155,8 @@ public class Main {
 				gameStatus.display.repaint();
 			}
 			if(!stalled) {
-				ComputerPlay.waitComputerPlayer();
-				NextPlayerThread.waitOnPlayerDone();
+				if(!ComputerPlay.waitComputerPlayer(5000)) Logger.error("Computer Player was still locked");
+				if(!NextPlayerThread.waitOnPlayerDone(5000)) Logger.error("Next Player was still locked");
 			}
 			stalled = false;
 			Logger.info("=============Game Over=============");

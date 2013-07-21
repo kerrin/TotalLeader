@@ -20,15 +20,17 @@ public class Config {
 		
 		/** 
 		 * The types of computer players:
-		 * Best 		The highest ranked player
-		 * Top10/50/100 One of the highest 10/50/100 ranked players
-		 * New			A random new player
-		 * Random		A random player (not best)
-		 * Merge		Combine 2 players to be come a new player
-		 * Modified		A random player with random modifications
-		 * PotLuck		Randomly pick from other type (except Best)
+		 * Best 				The highest ranked player
+		 * Top10/50/100 		One of the highest 10/50/100 ranked players
+		 * New					A random new player
+		 * Random				A random player (not best)
+		 * Merge				Combine 2 players to be come a new player
+		 * Modified				A random player with random modifications
+		 * PotLuck				Randomly pick from other type (except Best/TopX)
+		 * MergeTop2/5/10/50	Merge two of the top 2/5/10/50 scoring players
+		 * NotNew				Same as Pot Luck, but also excludes NEW
 		 */
-		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Best","Top10","Random","Top50","Merge"}),
+		COMPUTER_PLAYER_TYPE("computer_player_type",new String[]{"Best","Modified","NotNew","Top50","MergeTop10"}),
 		
 		/** The colors of the players */
 		PLAYER_COLOR("player_color",new String[]{"16711680","8421376","8388736","32896","16581375"}),

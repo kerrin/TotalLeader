@@ -39,13 +39,17 @@ import main.events.CoOrdinate;
  */
 public class ComputerPlay implements Runnable {
 	public enum TYPE {
-		BEST, 		// The highest ranked player. Must be first or POTLUCK/NOTNEW breaks
-		TOP10, 		// The 10 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
-		TOP50, 		// The 50 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
-		TOP100,		// The 100 highest ranked players. Must be second or POTLUCK/NOTNEW breaks
-		NEW, 		// A random new player
+		BEST, 		// The highest ranked player. Must be top 4 or POTLUCK/NOTNEW breaks
+		TOP10, 		// The 10 highest ranked players. Must be top 4 or POTLUCK/NOTNEW breaks
+		TOP50, 		// The 50 highest ranked players. Must be top 4 or POTLUCK/NOTNEW breaks
+		TOP100,		// The 100 highest ranked players. Must be top 4 or POTLUCK/NOTNEW breaks
+		NEW, 		// A random new player, Must be 5th or NOTNEW breaks
 		RANDOM, 	// A random player
 		MERGE, 		// Combine 2 players to be come a new player
+		MERGETOP2, 	// Combine 2 players to be come a new player (selected from top 2 scoring players)
+		MERGETOP5, 	// Combine 2 players to be come a new player (selected from top 5 scoring players)
+		MERGETOP10, // Combine 2 players to be come a new player (selected from top 10 scoring players)
+		MERGETOP50, // Combine 2 players to be come a new player (selected from top 50 scoring players)
 		MODIFIED, 	// A random player with random modifications
 		POTLUCK,	// Randomly pick from other type (except Best, Top 10)
 		NOTNEW;		// Randomly pick from other type (except Best, Top 10 and New)
@@ -347,9 +351,21 @@ public class ComputerPlay implements Runnable {
 	 * Calling function must also be synchronised or the lock may be taken
 	 */
 	public static synchronized void waitComputerPlayer() {
+		waitComputerPlayer(-1);
+	}
+	/**
+	 * Return when the lock is free
+	 * Calling function must also be synchronised or the lock may be taken
+	 * 
+	 * @param timeout	Maximum milliseconds to wait
+	 * 
+	 * @return Forced unlock
+	 */
+	public static synchronized boolean waitComputerPlayer(int timeout) {
 		Logger.debug("Waiting on playerDone");
+		long startWaiting = System.currentTimeMillis();
 		boolean output = false;
-		while(computerThreadLockedBy != null) {
+		while(computerThreadLockedBy != null && (timeout == -1 || startWaiting + timeout < System.currentTimeMillis())) {
 			if(!output) {
 				output = Logger.trace("Waiting on "+computerThreadLockedBy);
 			}
@@ -359,6 +375,12 @@ public class ComputerPlay implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+		if(computerThreadLockedBy != null) {
+			computerThreadLockedBy = null;
+			return true;
+		} else {
+			return false;
 		}
 	}
 	
@@ -613,21 +635,8 @@ public class ComputerPlay implements Runnable {
 			return new ComputerPlay(playerIndex, gameStatus, board);
 		
 		case BEST: case TOP10: case TOP50: case TOP100:
-			int highest = 0;
 			HashMap<Integer,Vector<File>> bestScores = new HashMap<Integer,Vector<File>>();
-			for(File file:files) {
-				String[] parts = file.getName().split("-");
-				int thisScore = Integer.parseInt(parts[0]);
-				if(thisScore > highest) highest = thisScore;
-				Vector<File> filesAtScore;
-				if(bestScores.containsKey(thisScore)) {
-					filesAtScore = bestScores.get(thisScore);
-				} else {
-					filesAtScore = new Vector<File>();
-				}
-				filesAtScore.add(file);
-				bestScores.put(thisScore, filesAtScore);
-			}
+			int highest = getTopScores(files, bestScores);
 			int howMany = 1;
 			if(type == TYPE.TOP10) howMany = 10;
 			if(type == TYPE.TOP50) howMany = 50;
@@ -664,9 +673,42 @@ public class ComputerPlay implements Runnable {
 			ComputerPlay mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board);
 			mergeComp1.mergeGene(mergeComp2);
 			return mergeComp1;
+		case MERGETOP2: case MERGETOP5: case MERGETOP10: case MERGETOP50:
+			bestScores = new HashMap<Integer,Vector<File>>();
+			highest = getTopScores(files, bestScores);
+			howMany = 2;
+			if(type == TYPE.MERGETOP5) howMany = 5;
+			if(type == TYPE.MERGETOP10) howMany = 10;
+			if(type == TYPE.MERGETOP50) howMany = 50;
+			if(howMany > files.length) howMany = files.length;
+			random = (int)(Math.random()*howMany);
+			random2 = random;
+			while(random == random2) random2 = (int)(Math.random()*howMany);
+			mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
+			mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board);
+			mergeComp1.mergeGene(mergeComp2);
+			return mergeComp1;
 		default:
 			return new ComputerPlay(playerIndex, gameStatus, board);
 		}
+	}
+
+	private static int getTopScores(File[] files, HashMap<Integer,Vector<File>> bestScores) { 
+		int highest = 0;
+		for(File file:files) {
+			String[] parts = file.getName().split("-");
+			int thisScore = Integer.parseInt(parts[0]);
+			if(thisScore > highest) highest = thisScore;
+			Vector<File> filesAtScore;
+			if(bestScores.containsKey(thisScore)) {
+				filesAtScore = bestScores.get(thisScore);
+			} else {
+				filesAtScore = new Vector<File>();
+			}
+			filesAtScore.add(file);
+			bestScores.put(thisScore, filesAtScore);
+		}
+		return highest;
 	}
 
 	/**
