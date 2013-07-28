@@ -2,6 +2,7 @@ package main.ai.rules.base;
 
 import main.GameStatus;
 import main.Logger;
+import main.ai.rules.ComputerUtils;
 import main.config.Config;
 
 public abstract class RuleStats {
@@ -164,12 +165,20 @@ public abstract class RuleStats {
 			rulePlayerIndexes[0] = gameStatus.seaPlayerIndex;
 			break;
 		case CONFIG_ANY_PLAYER:
-			rulePlayerIndexes = new int[1];
-			rulePlayerIndexes[0] = CONFIG_ANY_PLAYER;
+			rulePlayerIndexes = new int[gameStatus.nativePlayerIndex];
+			for(int playerIndex=0; playerIndex < gameStatus.nativePlayerIndex-1; playerIndex++) {
+				rulePlayerIndexes[playerIndex] = playerIndex;
+			}
+			ComputerUtils.randomiseArray(rulePlayerIndexes);
 			break;
 		case CONFIG_OPPONENT_PLAYER_ID:
 			rulePlayerIndexes = new int[gameStatus.nativePlayerIndex-1];
-			rulePlayerIndexes[0] = gameStatus.nativePlayerIndex;
+			int i=0;
+			for(int playerIndex=0; playerIndex < gameStatus.nativePlayerIndex-1; playerIndex++) {
+				if(playerIndex == ourPlayerIndex) continue;
+				rulePlayerIndexes[i++] = playerIndex;
+			}
+			ComputerUtils.randomiseArray(rulePlayerIndexes);
 			break;
 		
 		default:
@@ -179,7 +188,7 @@ public abstract class RuleStats {
 		
 		return rulePlayerIndexes;
 	}
-	
+
 	/**
 	 * Get the player ID to use in the rule
 	 * 
@@ -241,5 +250,54 @@ public abstract class RuleStats {
 				description.equals(rule.description) &&
 				weighting == rule.weighting
 				);
+	}
+	
+	/**
+	 * Randomly loop up or down within the range defined
+	 * 
+	 * @author Kerrin
+	 *
+	 */
+	public class LoopUpOrDown{
+		private int change;
+		private int end;
+		private int index;
+		
+		/**
+		 * C'tor
+		 * 
+		 * @param min	The minimum VALID value
+		 * @param max	The maximum VALID value
+		 */
+		public LoopUpOrDown(int min, int max) {
+			change = (Math.random()>= 0.5?1:-1);
+			if(change > 0) {
+				index = min-1;
+				end = max + 1;
+			} else {
+				index = max + 1;
+				end = min-1;
+			}
+		}
+
+		/**
+		 * Move on, and return if we are done
+		 * Call next at start of loop!
+		 * 
+		 * @return
+		 */
+		public boolean next() {
+			index += change;
+			return index != end;
+		}
+		
+		/**
+		 * Get the current index
+		 * 
+		 * @return
+		 */
+		public int getIndex() {
+			return index;
+		}
 	}
 }

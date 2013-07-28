@@ -95,7 +95,7 @@ public class PickAreaWithLowNumbers extends StartRule {
 	 */
 	private int getStartScore(int[][] locationScore, int x, int y) {
 		int squareScore = 0;
-		int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+		int[][] diffs = ComputerUtils.getRandomOrgtagonalMovesArray();
 		for(int i = 0; i < 4; i++) {
 			int willBeMineX = x+diffs[i][0];
 			int willBeMineY = y+diffs[i][1];

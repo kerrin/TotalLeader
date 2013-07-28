@@ -21,4 +21,6 @@ public class GameStatus {
 	public boolean pause = false;
 	public Player winner;
 	public boolean humanPlaying = false;
+	/** Show the debug panel instead of the game */
+	public boolean showDebug = false;
 }

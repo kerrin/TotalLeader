@@ -46,7 +46,7 @@ public class BuildBridge extends PlayRule {
 				short fromUnits=boardArray[fromX][fromY].getUnits();
 				// Only care about it if we have more than what we are looking for
 				if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer) || fromUnits < bridgeCost) continue;
-				int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+				int[][] diffs = ComputerUtils.getRandomOrgtagonalMovesArray();
 				for(int i = 0; i < 4; i++) {
 					int toX = fromX+diffs[i][0];
 					int toY = fromY+diffs[i][1];

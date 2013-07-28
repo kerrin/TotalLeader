@@ -35,7 +35,7 @@ public class AnyValidMove extends PlayRule {
 				if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer)) continue;
 				if(fromUnits < 1) continue;
 				
-				int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+				int[][] diffs = ComputerUtils.getRandomOrgtagonalMovesArray();
 				for(int i = 0; i < 4; i++) {
 					int toX = fromX+diffs[i][0];
 					int toY = fromY+diffs[i][1];

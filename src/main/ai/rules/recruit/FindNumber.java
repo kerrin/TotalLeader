@@ -194,7 +194,7 @@ public class FindNumber extends RecruitRule {
 					}
 					// Only care about it is our square
 					if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer)) continue;
-					int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+					int[][] diffs = ComputerUtils.getRandomOrgtagonalMovesArray();
 					int leftToFind = requiredAdjacentSquareThatAreUs;
 					int foundUs = 0;
 					boolean foundPlayerNumber = (numberToFindOponent == -1); // -1 means we don't care

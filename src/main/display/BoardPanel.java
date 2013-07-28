@@ -20,7 +20,7 @@ import main.input.Mouse;
 import main.player.Player;
 
 
-public class BoardDisplay extends JPanel {
+public class BoardPanel extends JPanel {
 	/**  */
 	private static final long serialVersionUID = 628994246369182191L;
 	
@@ -31,7 +31,7 @@ public class BoardDisplay extends JPanel {
 	private final GameStatus gameStatus;
 	private Board board;
 	
-	public BoardDisplay(Board board, GameStatus gameStatus) {
+	public BoardPanel(Board board, GameStatus gameStatus) {
 		super();
 		this.gameStatus = gameStatus;
 		this.board = board;
@@ -87,12 +87,12 @@ public class BoardDisplay extends JPanel {
 	    	
 			g.setColor(Color.BLACK);
 	        g.setFont(new Font(font, Font.BOLD, fontSize));
-	        g.drawString("Player: " + (gameStatus.currentPlayerIndex+1), 4, bottomGuiY+Display.BOTTOM_GUI_HEIGHT-4);
+	        g.drawString("Player: " + (gameStatus.currentPlayerIndex+1), 4, bottomGuiY+DisplayFrame.BOTTOM_GUI_HEIGHT-4);
 	        
 			if(gameStatus.currentTurn < 1) {
 				showTurnStatus(g, bottomGuiY, "Select Start Location");
 			} else {
-				g.drawString("Turn: " + gameStatus.currentTurn, 110, bottomGuiY+Display.BOTTOM_GUI_HEIGHT-4);
+				g.drawString("Turn: " + gameStatus.currentTurn, 110, bottomGuiY+DisplayFrame.BOTTOM_GUI_HEIGHT-4);
 				if(Main.getGameState() == GameState.PLAYING_RECRUITMENT) {
 					showTurnStatus(g, bottomGuiY, "Recruits: "+currentPlayer.getRecruits());
 				} else {
@@ -102,13 +102,13 @@ public class BoardDisplay extends JPanel {
 		}
 		
 		g.setColor(Color.BLACK);
-		g.drawLine(0, squarePixels*boardHeight, squarePixels*boardWidth+Display.SIDE_GUI_WIDTH, squarePixels*boardHeight);
+		g.drawLine(0, squarePixels*boardHeight, squarePixels*boardWidth+DisplayFrame.SIDE_GUI_WIDTH, squarePixels*boardHeight);
 	}
 
 	private void showTurnStatus(Graphics g, int bottomGuiY, String message) {
 		g.setColor(Color.BLACK);
 		g.setFont(new Font(font, Font.BOLD, fontSize));
-		g.drawString(message, 200, bottomGuiY+Display.BOTTOM_GUI_HEIGHT-4);
+		g.drawString(message, 200, bottomGuiY+DisplayFrame.BOTTOM_GUI_HEIGHT-4);
 	}
 
 	private void displayPercentageBars(Graphics g, int boardHeight, int boardWidth) {
@@ -133,7 +133,7 @@ public class BoardDisplay extends JPanel {
         	}
     	 	landBarYEnd += (boardHeight*squarePixels*landPercent);
     	 	//System.out.println(player+"=>Land: PS:"+playerSquares+",bY:"+landBarY+",byE:"+landBarYEnd+",lp:"+landPercent);
-    	 	g.fillRect(squarePixels*boardWidth, landBarY, Display.SIDE_GUI_WIDTH/2, landBarYEnd-landBarY);
+    	 	g.fillRect(squarePixels*boardWidth, landBarY, DisplayFrame.SIDE_GUI_WIDTH/2, landBarYEnd-landBarY);
     	 	landBarY = landBarYEnd;
     	 	
     	 	int playerUnits = thisPlayer.getTotalUnits();
@@ -144,17 +144,17 @@ public class BoardDisplay extends JPanel {
         	}
     	 	unitsBarYEnd += (boardHeight*squarePixels*unitsPercent);
     	 	//System.out.println(player+"=>Units P:"+playerUnits+",bY:"+unitsBarY+",byE:"+unitsBarYEnd+",up:"+unitsPercent);
-    	 	g.fillRect(squarePixels*boardWidth+(Display.SIDE_GUI_WIDTH/2), unitsBarY, Display.SIDE_GUI_WIDTH/2, unitsBarYEnd-unitsBarY);
+    	 	g.fillRect(squarePixels*boardWidth+(DisplayFrame.SIDE_GUI_WIDTH/2), unitsBarY, DisplayFrame.SIDE_GUI_WIDTH/2, unitsBarYEnd-unitsBarY);
     	 	unitsBarY = unitsBarYEnd;
         }
         g.setColor(Color.BLACK);
-        g.drawLine(squarePixels*boardWidth, 0, squarePixels*boardWidth, squarePixels*boardHeight-1+Display.BOTTOM_GUI_HEIGHT);
-        g.drawLine(squarePixels*boardWidth+(Display.SIDE_GUI_WIDTH/2), 0, squarePixels*boardWidth+(Display.SIDE_GUI_WIDTH/2), squarePixels*boardHeight-1+Display.BOTTOM_GUI_HEIGHT);
+        g.drawLine(squarePixels*boardWidth, 0, squarePixels*boardWidth, squarePixels*boardHeight-1+DisplayFrame.BOTTOM_GUI_HEIGHT);
+        g.drawLine(squarePixels*boardWidth+(DisplayFrame.SIDE_GUI_WIDTH/2), 0, squarePixels*boardWidth+(DisplayFrame.SIDE_GUI_WIDTH/2), squarePixels*boardHeight-1+DisplayFrame.BOTTOM_GUI_HEIGHT);
         
         g.setColor(Color.BLACK);
         g.setFont(new Font(font, Font.BOLD, fontSize));
-        g.drawString("L", squarePixels*boardWidth+4, squarePixels*boardHeight-4+Display.BOTTOM_GUI_HEIGHT);
-        g.drawString("U", squarePixels*boardWidth+(Display.SIDE_GUI_WIDTH/2)+4, squarePixels*boardHeight-4+Display.BOTTOM_GUI_HEIGHT);
+        g.drawString("L", squarePixels*boardWidth+4, squarePixels*boardHeight-4+DisplayFrame.BOTTOM_GUI_HEIGHT);
+        g.drawString("U", squarePixels*boardWidth+(DisplayFrame.SIDE_GUI_WIDTH/2)+4, squarePixels*boardHeight-4+DisplayFrame.BOTTOM_GUI_HEIGHT);
 	}
 
 	private void displayCurrentPlayerBorder(Graphics g, int boardHeight, int boardWidth) {

@@ -155,15 +155,17 @@ public class FindANumberNearMe extends PlayRule {
 			if(checkPlayerIndex >= 0) playerToFind = gameStatus.players[checkPlayerIndex];
 			Square[][] boardArray = board.getBoard();
 			
-			for(int fromX = 0; fromX < boardWidth; fromX++) {
-				for(int fromY = 0; fromY < boardHeight; fromY++) {
-					short fromUnits=boardArray[fromX][fromY].getUnits();
+			LoopUpOrDown fromX = new LoopUpOrDown(0,boardWidth-1);
+			while(fromX.next()) {
+				LoopUpOrDown fromY = new LoopUpOrDown(0,boardHeight-1);
+				while(fromY.next()) {
+					short fromUnits=boardArray[fromX.getIndex()][fromY.getIndex()].getUnits();
 					// Only care about it if we have more than what we are looking for
-					if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer) || fromUnits <= numberToFind) continue;
-					int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+					if(!boardArray[fromX.getIndex()][fromY.getIndex()].getOwner().equals(currentPlayer) || fromUnits <= numberToFind) continue;
+					int[][] diffs1 = ComputerUtils.getRandomOrgtagonalMovesArray();
 					for(int i = 0; i < 4; i++) {
-						int toX = fromX+diffs[i][0];
-						int toY = fromY+diffs[i][1];
+						int toX = fromX.getIndex()+diffs1[i][0];
+						int toY = fromY.getIndex()+diffs1[i][1];
 						// Check the to board location is on the board
 						if(toX >= boardWidth || toX < 0 || toY >= boardHeight || toY < 0) continue;
 						Player toOwner = boardArray[toX][toY].getOwner();
@@ -187,9 +189,10 @@ public class FindANumberNearMe extends PlayRule {
 						if(toUnits == numberToFind) {
 							if(requiredAdjacentSquareThatAreUs > 1) {
 								int leftToFind = requiredAdjacentSquareThatAreUs;
+								int[][] diffs2 = ComputerUtils.getRandomOrgtagonalMovesArray();
 								for(int j = 0; j < 4; j++) {
-									int nearX = toX+diffs[j][0];
-									int nearY = toY+diffs[j][1];
+									int nearX = toX+diffs2[j][0];
+									int nearY = toY+diffs2[j][1];
 									// Check the to board location is on the board
 									if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
 									if(boardArray[nearX][nearY].getOwner().equals(currentPlayer)) leftToFind--;
@@ -199,7 +202,7 @@ public class FindANumberNearMe extends PlayRule {
 									continue;
 								}
 							}
-							ComputerMove move = new ComputerMove(new CoOrdinate(fromX,fromY), new CoOrdinate(toX,toY), fromUnits);
+							ComputerMove move = new ComputerMove(new CoOrdinate(fromX.getIndex(),fromY.getIndex()), new CoOrdinate(toX,toY), fromUnits);
 							Logger.debug(name+":"+move);
 							return move;
 						} else {

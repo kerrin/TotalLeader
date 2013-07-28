@@ -24,6 +24,7 @@ public class Keyboard implements KeyListener {
 		keys.put(keyCode, true);
 		Logger.checkChangeLogLevel(keyCode);
 		if(keyCode == KeyEvent.VK_P) gameStatus.pause = !gameStatus.pause;
+		if(keyCode == KeyEvent.VK_F1) gameStatus.showDebug = !gameStatus.showDebug;
 	}
 
 	@Override

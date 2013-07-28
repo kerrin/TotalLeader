@@ -265,7 +265,7 @@ public class Square {
 	 * @return
 	 */
 	public boolean startHasPlayerOverlap(Board board) {
-		int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+		int[][] diffs = ComputerUtils.getRandomOrgtagonalMovesArray();
 		for(int i = 0; i < 4; i++) {
 			int willBeMineX = coordinate.x+diffs[i][0];
 			int willBeMineY = coordinate.y+diffs[i][1];

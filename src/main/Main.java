@@ -13,7 +13,6 @@ import main.events.EventManager;
 import main.player.Player;
 import main.player.Player.TYPE;
 
-
 /**
  * 
  * @author Kerrin
@@ -149,6 +148,8 @@ public class Main {
 							gameStatus.players[gameStatus.currentPlayerIndex].getType() != Player.TYPE.PLAYER) {
 						Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
 						gameStatus.gameState = GameState.GAME_OVER;
+						gameStatus.showDebug = false;
+						gameStatus.display.repaint();
 						stalled = true;
 					}
 				}
@@ -254,6 +255,8 @@ public class Main {
 	private static void checkGameOver() {
 		if(gameStatus.currentTurn > gameStatus.config.getInt(Config.KEY.GAME_TURNS.getKey())) {
 			setGameState(GameState.GAME_OVER);
+			gameStatus.showDebug = false;
+			gameStatus.display.repaint();
 		}
 		int activePlayers = 0;
 		int lastActivePlayer = -1;
@@ -265,6 +268,8 @@ public class Main {
 		}
 		if(activePlayers <= 1) {
 			setGameState(GameState.GAME_OVER);
+			gameStatus.showDebug = false;
+			gameStatus.display.repaint();
 			Logger.debug("=============Last Player Was: "+(lastActivePlayer>=0?lastActivePlayer+1:"No one")+"=============");
 		}
 		try {

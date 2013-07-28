@@ -94,23 +94,26 @@ public class MoveToEdge extends PlayRule {
 		int boardHeight = gameStatus.config.getInt(Config.KEY.BOARD_HEIGHT.getKey());
 		Player currentPlayer = gameStatus.players[gameStatus.currentPlayerIndex];
 		Square[][] boardArray = board.getBoard();
-		for(int fromX = 0; fromX < boardWidth; fromX++) {
-			for(int fromY = 0; fromY < boardHeight; fromY++) {
-				short fromUnits=boardArray[fromX][fromY].getUnits();
+		LoopUpOrDown fromX = new LoopUpOrDown(0,boardWidth-1);
+		while(fromX.next()) {
+			LoopUpOrDown fromY = new LoopUpOrDown(0,boardHeight-1);
+			while(fromY.next()) {
+				short fromUnits=boardArray[fromX.getIndex()][fromY.getIndex()].getUnits();
 				if(fromUnits <= 0) continue;
 				// Only care about it if it is our square
-				if(!boardArray[fromX][fromY].getOwner().equals(currentPlayer)) continue;
-				int[][] diffs = ComputerUtils.getOrgtagonalMovesArray();
+				if(!boardArray[fromX.getIndex()][fromY.getIndex()].getOwner().equals(currentPlayer)) continue;
+				int[][] diffs1 = ComputerUtils.getRandomOrgtagonalMovesArray();
 				for(int i = 0; i < 4; i++) {
-					int toX = fromX+diffs[i][0];
-					int toY = fromY+diffs[i][1];
+					int toX = fromX.getIndex()+diffs1[i][0];
+					int toY = fromY.getIndex()+diffs1[i][1];
 					// Check valid board square
 					if(toX >= boardWidth || toX < 0 || toY >= boardHeight || toY < 0) continue;
 					// Check we own the to square too
 					if(!boardArray[toX][toY].getOwner().equals(currentPlayer)) continue;
+					int[][] diffs2 = ComputerUtils.getRandomOrgtagonalMovesArray();
 					for(int j = 0; j < 4; j++) {
-						int nearX = toX+diffs[j][0];
-						int nearY = toY+diffs[j][1];
+						int nearX = toX+diffs2[j][0];
+						int nearY = toY+diffs2[j][1];
 						// Check the to board location is on the board
 						if(nearX >= boardWidth || nearX < 0 || nearY >= boardHeight || nearY < 0) continue;
 						Player nearOwner = boardArray[nearX][nearY].getOwner();
@@ -134,7 +137,7 @@ public class MoveToEdge extends PlayRule {
 							// Check valid to move units
 							if(boardArray[toX][toY].getUnits() >= gameStatus.config.getInt(Config.KEY.MAX_UNITS.getKey())) continue;
 							// Found and edge space
-							ComputerMove move = new ComputerMove(new CoOrdinate(fromX,fromY), new CoOrdinate(toX,toY), fromUnits);
+							ComputerMove move = new ComputerMove(new CoOrdinate(fromX.getIndex(),fromY.getIndex()), new CoOrdinate(toX,toY), fromUnits);
 							Logger.debug(gameStatus.currentPlayerIndex+") "+name+":"+move);
 							return move;
 						}

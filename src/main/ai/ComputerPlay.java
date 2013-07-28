@@ -266,7 +266,7 @@ public class ComputerPlay implements Runnable {
 				}
 				Vector<RecruitRule> thisTurnsRules = (Vector<RecruitRule>)recruitRules.clone();
 				while(!thisTurnsRules.isEmpty() && place == null) {
-					long pickRule = (long)(Math.random()*totalPlayRuleWeights);
+					long pickRule = (long)(Math.random()*totalRecruitRuleWeights);
 					Iterator<RecruitRule> iter = thisTurnsRules.iterator();
 					while(place == null && iter.hasNext()) {
 						RecruitRule rule = iter.next();
