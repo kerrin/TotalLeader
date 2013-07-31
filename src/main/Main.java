@@ -47,8 +47,6 @@ public class Main {
 	
 	public static GameStatus gameStatus;
 	public static Board board;
-
-	private static boolean stalled;
 	
 	/**
 	 * @param args
@@ -120,6 +118,7 @@ public class Main {
 					// In case we change player type progmatically
 					gameStatus.computerAi[gameStatus.currentPlayerIndex] = null;
 				}
+				gameStatus.display.repaint();
 				while(currentPlayer.getStartLocationX() < 0) {
 					try {
 						Thread.sleep(100);
@@ -139,6 +138,8 @@ public class Main {
 			}
 			int lastTurn = 0;
 			long lastTurnChange = System.currentTimeMillis();
+			// The following takes two times around the loop to stall, so the changing of a player can't trigger it
+			boolean tryTwo = false;
 			while(gameStatus.gameState != GameState.GAME_OVER) {
 				if(lastTurn < gameStatus.currentTurn) {
 					lastTurn = gameStatus.currentTurn;
@@ -146,20 +147,20 @@ public class Main {
 				} else if(lastTurnChange + TOO_LONG < System.currentTimeMillis()) {
 					if(gameStatus.config.getInt(Config.KEY.AUTO_PLAY.getKey()) == 1 && 
 							gameStatus.players[gameStatus.currentPlayerIndex].getType() != Player.TYPE.PLAYER) {
-						Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
-						gameStatus.gameState = GameState.GAME_OVER;
-						gameStatus.showDebug = false;
-						gameStatus.display.repaint();
-						stalled = true;
+						if(tryTwo) {
+							Logger.info("Game stalled on turn: "+ gameStatus.currentTurn + ", player "+ gameStatus.currentPlayerIndex);
+							gameStatus.gameState = GameState.GAME_OVER;
+							gameStatus.showDebug = false;
+							gameStatus.display.repaint();
+						} else {
+							tryTwo = true;
+						}
 					}
 				}
 				gameStatus.display.repaint();
 			}
-			if(!stalled) {
-				if(!ComputerPlay.waitComputerPlayer(5000)) Logger.error("Computer Player was still locked");
-				if(!NextPlayerThread.waitOnPlayerDone(5000)) Logger.error("Next Player was still locked");
-			}
-			stalled = false;
+			if(!ComputerPlay.waitComputerPlayer(5000)) Logger.error("Computer Player was still locked");
+			if(!NextPlayerThread.waitOnPlayerDone(5000)) Logger.error("Next Player was still locked");
 			Logger.info("=============Game Over=============");
 			// Show scores
 			gameStatus.winner = gameStatus.players[0];

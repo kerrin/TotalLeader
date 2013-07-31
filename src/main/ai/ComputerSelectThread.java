@@ -40,6 +40,9 @@ public class ComputerSelectThread implements Runnable {
 		computerSelectLockedBy = Utils.niceStackTrace(new Throwable().getStackTrace());
 	}
 
+	/**
+	 * Wait for the computer select lock to be freed
+	 */
 	public static synchronized void waitOnComputerSelect() {
 		Logger.debug("Waiting on computerSelectDone");
 		boolean output = false;
@@ -56,6 +59,13 @@ public class ComputerSelectThread implements Runnable {
 		}
 	}
 	
+	/**
+	 * Start a new computer select thread
+	 * 
+	 * @param coordinate
+	 * @param gameStatus
+	 * @param board
+	 */
 	public static synchronized void spawnComputerSelectThread(CoOrdinate coordinate, GameStatus gameStatus, Board board) {
 		lockOnComputerSelect();
 		new Thread(new ComputerSelectThread(coordinate, gameStatus)).start();

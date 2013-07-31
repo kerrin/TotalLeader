@@ -213,8 +213,8 @@ public class Square {
 		short baseDefenceUnits = (short)gameStatus.config.getInt(Config.KEY.BASE_DEFENCE_UNITS.getKey());
 		if(defUnits == attackUnits) {
 			// Tie, both go down to 1 unit
-			owner.modifyTotalUnits((short)-(amount-1));
-			toSquare.owner.modifyTotalUnits((short)-(amount-1));
+			owner.modifyTotalUnits((short)-(attackUnits-1));
+			toSquare.owner.modifyTotalUnits((short)-(attackUnits-1));
 			units = 1; 
 			toSquare.units = 1;
 		} else if(defUnits == 0) {
