@@ -55,16 +55,18 @@ public class TestFileManager extends TestCase {
 	}
 	
 	public void testLoadComputer() {
-		ComputerPlay comp = FileManager.loadComputerPlayer("test.tl-gene", 0, gameStatus, board);
+		ComputerPlay comp = FileManager.loadComputerPlayer("test.tl-gene", 0, gameStatus, board, false);
 		assertTrue("Null From Load", comp != null);
 	}
 	
 	public void testSaveComputer() {
 		ComputerPlay comp = new ComputerPlay(0,gameStatus,board);
 		FileManager.saveComputerPlayer(comp, gameStatus, board, true, true, false);
-		ComputerPlay compLoaded = FileManager.loadComputerPlayer(comp.filename, 0, gameStatus, board);
+		ComputerPlay compLoaded = FileManager.loadComputerPlayer(comp.filename, 0, gameStatus, board, false);
+		assertTrue("Null From Load", compLoaded != null);
 		FileManager.saveComputerPlayer(compLoaded, gameStatus, board, false, false, false);
-		ComputerPlay compLoaded2 = FileManager.loadComputerPlayer(compLoaded.filename, 0, gameStatus, board);
+		ComputerPlay compLoaded2 = FileManager.loadComputerPlayer(compLoaded.filename, 0, gameStatus, board, false);
+		assertTrue("Null From Load", compLoaded2 != null);
 		deepCompareComputer(compLoaded,compLoaded2, 1);
 		Logger.info("Compare to original computer");
 		deepCompareComputer(comp,compLoaded2, 2);

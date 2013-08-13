@@ -344,7 +344,7 @@ public class Main {
 		int counter = 0;
 		for(File file:allFiles) {
 			if(counter%50 == 0) Logger.info("Loading file "+(counter+1)+" of "+allFiles.length+": "+file.getName());
-			ComputerPlay computer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board);
+			ComputerPlay computer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board, false);
 			if(computer == null) continue;
 			boolean found = false;
 			Iterator<ComputerPlay> iter = computers.iterator();

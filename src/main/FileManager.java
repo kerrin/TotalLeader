@@ -38,10 +38,10 @@ public class FileManager {
 	 * 
 	 * @return
 	 */
-	public static ComputerPlay loadComputerPlayer(String filename, int playerIndex, GameStatus gameStatus, Board board) {
+	public static ComputerPlay loadComputerPlayer(String filename, int playerIndex, GameStatus gameStatus, Board board, boolean onNullMakeNew) {
 		char[] data = loadFile(gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+filename);
 		if(data == null) {
-			return new ComputerPlay(playerIndex, gameStatus, board);
+			return onNullMakeNew?new ComputerPlay(playerIndex, gameStatus, board):null;
 		}
 		return new ComputerPlay(filename, new String(data), playerIndex, gameStatus, board);
 	}
@@ -88,9 +88,9 @@ public class FileManager {
 	 * @param saveComp			The ComputerPlay to write out
 	 * @param gameStatus
 	 * @param board
-	 * @param force
-	 * @param noCurrentScore
-	 * @param checkForDuplicateFiles
+	 * @param force				Force the save, even if the score is too low
+	 * @param noCurrentScore	Don't add the current score when we save
+	 * @param checkForDuplicateFiles	Check all the other config files for exact matches of this config and consolidate
 	 */
 	public static void saveComputerPlayer(ComputerPlay saveComp, GameStatus gameStatus, Board board, boolean force, boolean noCurrentScore, boolean checkForDuplicateFiles) {
 		// Only save computer players
@@ -129,7 +129,8 @@ public class FileManager {
 			File[] allFiles = FileManager.listAllFiles(gameStatus);
 			int i=0;
 			for(File file:allFiles) {
-				ComputerPlay compareComputer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board);
+				ComputerPlay compareComputer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board, false);
+				if(compareComputer == null) continue;
 				if(i%50 == 0) Logger.info("Loading file "+(i+1)+" of "+allFiles.length+": "+file.getName());
 				if(saveComp.sameConfig(compareComputer)) {
 					saveComp.mergeScores(compareComputer);

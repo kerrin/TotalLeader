@@ -636,16 +636,16 @@ public class ComputerPlay implements Runnable {
 				highest--;
 			}
 			random = (int)(Math.random()*filesAtScore.size());
-			return FileManager.loadComputerPlayer(filesAtScore.get(random).getName(), playerIndex, gameStatus, board);
+			return FileManager.loadComputerPlayer(filesAtScore.get(random).getName(), playerIndex, gameStatus, board, true);
 		
 		case RANDOM: 
 			random = (int)(Math.random()*files.length);
-			ComputerPlay randComp = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
+			ComputerPlay randComp = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board, true);
 			return randComp;
 		
 		case MODIFIED:
 			random = (int)(Math.random()*files.length);
-			ComputerPlay modComp = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
+			ComputerPlay modComp = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board, true);
 			modComp.modifyGene();
 			return modComp;
 			
@@ -653,8 +653,8 @@ public class ComputerPlay implements Runnable {
 			random = (int)(Math.random()*files.length);
 			int random2 = random;
 			while(random == random2) random2 = (int)(Math.random()*files.length);
-			ComputerPlay mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
-			ComputerPlay mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board);
+			ComputerPlay mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board, true);
+			ComputerPlay mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board, true);
 			mergeComp1.mergeGene(mergeComp2);
 			return mergeComp1;
 		case MERGETOP2: case MERGETOP5: case MERGETOP10: case MERGETOP50:
@@ -668,8 +668,8 @@ public class ComputerPlay implements Runnable {
 			random = (int)(Math.random()*howMany);
 			random2 = random;
 			while(random == random2) random2 = (int)(Math.random()*howMany);
-			mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board);
-			mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board);
+			mergeComp1 = FileManager.loadComputerPlayer(files[random].getName(), playerIndex, gameStatus, board, true);
+			mergeComp2 = FileManager.loadComputerPlayer(files[random2].getName(), playerIndex, gameStatus, board, true);
 			mergeComp1.mergeGene(mergeComp2);
 			return mergeComp1;
 		default:
