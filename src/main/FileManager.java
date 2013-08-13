@@ -8,6 +8,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 import main.ai.ComputerPlay;
 import main.board.Board;
@@ -40,7 +41,7 @@ public class FileManager {
 	public static ComputerPlay loadComputerPlayer(String filename, int playerIndex, GameStatus gameStatus, Board board) {
 		char[] data = loadFile(gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+filename);
 		if(data == null) {
-			return new ComputerPlay(-1, gameStatus, board);
+			return new ComputerPlay(playerIndex, gameStatus, board);
 		}
 		return new ComputerPlay(filename, new String(data), playerIndex, gameStatus, board);
 	}
@@ -55,7 +56,7 @@ public class FileManager {
 		return loadFile(filenameAndPath, true);
 	}
 	public static char[] loadFile(String filenameAndPath, boolean careAboutFileNotFound) {
-		Logger.info("Loading: "+filenameAndPath);
+		Logger.debug("Loading: "+filenameAndPath);
 		FileInputStream istream;
 		File f = new File(filenameAndPath);
 		try {
@@ -84,23 +85,16 @@ public class FileManager {
 	/**
 	 * Write out a ComputerPlay file to disk
 	 * 
-	 * @param comp			The ComputerPlay to write out
-	 * @param gameStatus
-	 * @param board
-	 */
-	public static void saveComputerPlayer(ComputerPlay comp, GameStatus gameStatus, Board board) {
-		saveComputerPlayer(comp, gameStatus, board, false);
-	}
-	/**
-	 * 
-	 * @param comp			The ComputerPlay to write out
+	 * @param saveComp			The ComputerPlay to write out
 	 * @param gameStatus
 	 * @param board
 	 * @param force
+	 * @param noCurrentScore
+	 * @param checkForDuplicateFiles
 	 */
-	public static void saveComputerPlayer(ComputerPlay comp, GameStatus gameStatus, Board board, boolean force) {
+	public static void saveComputerPlayer(ComputerPlay saveComp, GameStatus gameStatus, Board board, boolean force, boolean noCurrentScore, boolean checkForDuplicateFiles) {
 		// Only save computer players
-		if(gameStatus.players[comp.getPlayerIndex()].getType() != TYPE.COMPUTER) return;
+		if(gameStatus.players[saveComp.getPlayerIndex()].getType() != TYPE.COMPUTER) return;
 		// e.g. Low: 
 		//		900 = (20 * 20 / 4) * 9
 		//		720 = (20 * 20 / 5) * 9
@@ -117,21 +111,39 @@ public class FileManager {
 		double highScoreThreshold = lowScoreThreshold * 11.0;
 		lowScoreThreshold *= 9.0;
 
-		int compScore = comp.getAverageScore();
+		int compScore = saveComp.getAverageScore(noCurrentScore);
 		// Save the winner always, and save back any unchanged players with the new score, or high scores
-		if(!force && comp.filename == null && !comp.winner && compScore < highScoreThreshold) {
-			Logger.info("Not saving "+ gameStatus.players[comp.getPlayerIndex()].getName()+" as it didn't win and score was below hi threashold of "+highScoreThreshold+".");
+		if(!force && saveComp.filename == null && !saveComp.winner && compScore < highScoreThreshold) {
+			Logger.info("Not saving "+ gameStatus.players[saveComp.getPlayerIndex()].getName()+" as it didn't win and score was below hi threashold of "+highScoreThreshold+".");
 			return;
 		}
 		// If the average score is low, throw away the computer player
 		if(!force && compScore < lowScoreThreshold) {
-			Logger.info("Not saving "+ gameStatus.players[comp.getPlayerIndex()].getName()+ " as the score was below "+lowScoreThreshold+".");
+			Logger.info("Not saving "+ gameStatus.players[saveComp.getPlayerIndex()].getName()+ " as the score was below "+lowScoreThreshold+".");
 			return;
 		}
+		
+		ArrayList<String> deleteFiles = new ArrayList<String>();
+		if(checkForDuplicateFiles) {
+			Logger.info("Checking for duplicates");
+			File[] allFiles = FileManager.listAllFiles(gameStatus);
+			int i=0;
+			for(File file:allFiles) {
+				ComputerPlay compareComputer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board);
+				if(i%50 == 0) Logger.info("Loading file "+(i+1)+" of "+allFiles.length+": "+file.getName());
+				if(saveComp.sameConfig(compareComputer)) {
+					saveComp.mergeScores(compareComputer);
+					deleteFiles.add(compareComputer.filename);
+				}
+				i++;
+			}
+		}
+		
 		// Good enough to keep, so save it
-		String config = comp.getConfigFileContents();
+		String config = saveComp.getConfigFileContents(noCurrentScore);
 		String computerConfigFolder = gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey());
-		File f = new File(computerConfigFolder+comp.getConfigFilename());
+		File f = new File(computerConfigFolder+saveComp.getConfigFilename(noCurrentScore));
+		Logger.info("Saving as: "+f.getName());
 		FileOutputStream ostr;
 		try {
 			ostr = new FileOutputStream(f);
@@ -150,7 +162,11 @@ public class FileManager {
 			e.printStackTrace();
 			return;
 		}
-		comp.filename = f.getName();
+		saveComp.filename = f.getName();
+		for(String filename:deleteFiles) {
+			Logger.info("Deleting duplicate " + filename);
+			deletePreviousFile(filename, gameStatus);
+		}
 	}
 
 	/**
@@ -188,7 +204,7 @@ public class FileManager {
 			gameStatus.players[i].modifyTotalUnits((short)90);
 			gameStatus.players[i].score();
 			gameStatus.computerAi[i] = new ComputerPlay(0,gameStatus,board);
-			FileManager.saveComputerPlayer(gameStatus.computerAi[i], gameStatus, board, true);
+			FileManager.saveComputerPlayer(gameStatus.computerAi[i], gameStatus, board, true, false, false);
 		}
 	}
 	

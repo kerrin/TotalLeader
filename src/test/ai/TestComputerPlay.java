@@ -50,22 +50,22 @@ public class TestComputerPlay extends TestCase {
 		ComputerPlay comp = new ComputerPlay(0,gameStatus,board);
 		
 		assertTrue("getConfigFileContents returned different results for comp!", 
-				comp.getConfigFileContents().equals(comp.getConfigFileContents()));
+				comp.getConfigFileContents(false).equals(comp.getConfigFileContents(false)));
 		
-		String compConfig = comp.getConfigFileContents();
+		String compConfig = comp.getConfigFileContents(false);
 		ComputerPlay compFromConfig = new ComputerPlay("test", compConfig, 0, gameStatus,board);
 		
-		String compFromConfigConfig = compFromConfig.getConfigFileContents();
-		String compConf = comp.getConfigFileContents();
+		String compFromConfigConfig = compFromConfig.getConfigFileContents(false);
+		String compConf = comp.getConfigFileContents(false);
 		compFromConfigConfig = TestRig.stripSecondScore(compFromConfigConfig);
 		
-		if(!compFromConfigConfig.equals(comp.getConfigFileContents())) {
+		if(!compFromConfigConfig.equals(comp.getConfigFileContents(false))) {
 			Logger.info(compFromConfigConfig);
 			Logger.info(compConf);
 		}
 
 		assertTrue("getConfigFileContents returned different results for compFromConfig!", 
-				compFromConfig.getConfigFileContents().equals(compFromConfig.getConfigFileContents()));
+				compFromConfig.getConfigFileContents(false).equals(compFromConfig.getConfigFileContents(false)));
 		
 		assertTrue("getConfigFileContents returned different results for comp and compFromConfig!", 
 				compFromConfigConfig.equals(compConf));

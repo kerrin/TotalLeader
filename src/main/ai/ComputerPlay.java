@@ -96,6 +96,8 @@ public class ComputerPlay implements Runnable {
 	private long totalPlayRuleWeights = 0;
 	/** The total of all weightings for the recruit rules, so we can determine the chance of each rule running */
 	private long totalRecruitRuleWeights = 0;
+	/** If this computer has a checksum */
+	private long checksum = -1;
 	
 	/**
 	 * 
@@ -175,6 +177,7 @@ public class ComputerPlay implements Runnable {
 	 * @param config
 	 */
 	private void setUpRulesFromConfigFile(ComputerPlayConfig config) {
+		checksum  = config.getCheckSum();
 		HashMap<String, PlayRule> configPlayRule = config.getPlayRules();
 		HashMap<String, RecruitRule> configRecruitRule = config.getRecruitRules();
 		int maxUnits = gameStatus.config.getInt(Config.KEY.MAX_UNITS.getKey());
@@ -399,9 +402,9 @@ public class ComputerPlay implements Runnable {
 	 * 
 	 * @return	Filename
 	 */
-	public String getConfigFilename() {
+	public String getConfigFilename(boolean noCurrentScore) {
 		StringBuffer sb = new StringBuffer("");
-		int averageScore = getAverageScore();
+		int averageScore = getAverageScore(noCurrentScore);
 		sb.append(averageScore);
 		sb.append("-");
 		sb.append(System.currentTimeMillis());
@@ -415,78 +418,59 @@ public class ComputerPlay implements Runnable {
 	 * 
 	 * @return	Config for writing to file
 	 */
-	public String getConfigFileContents() {
+	public String getConfigFileContents(boolean noCurrentScore) {
 		// Select an arbitrary player for the opponent
 		StringBuffer sb = new StringBuffer("");
 		
+		long checksum = 0;
+		
 		sb.append("SCORE=");
-		sb.append(gameStatus.players[playerIndex].getScore());
+		int gameScore = -1;
+		if(!noCurrentScore) {
+			gameScore = gameStatus.players[playerIndex].getScore();
+			if(gameScore == -1) gameScore = getAverageScore(noCurrentScore)/2;
+			sb.append(gameScore);
+		}
+		boolean comma = !noCurrentScore;
 		if(previousScores != null) {
 			for(int score:previousScores) {
-				sb.append(",");
+				if(comma) {
+					sb.append(",");
+				} else {
+					comma = true;
+				}
 				sb.append(score);
 			}
 		}
+		if(!comma) sb.append("0");
 		sb.append("\n");
 		sb.append("PLAY\n");
 		Iterator<PlayRule> playIter = playRules.iterator();
 		while(playIter.hasNext()) {
 			PlayRule rule = playIter.next();
-			/*
-			if(rule instanceof FindANumberNearMe) {
-				FindANumberNearMe r = (FindANumberNearMe) rule;
-				int configPlayerIndex = r.playerIndexForRule(playerIndex);
-				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
-					int rulePlayerIndex = r.getPlayerIndex();
-					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-							" pi:"+rulePlayerIndex);
-					continue;
-				}
-				r.setPlayerIndex(configPlayerIndex);
-				r.resetAdditionalDescriptionAndConfigDescriptor();
-			} else if(rule instanceof FindANumberThatICanBuildLandTo) {
-				FindANumberThatICanBuildLandTo r = (FindANumberThatICanBuildLandTo) rule;
-				int configPlayerIndex = r.playerIndexForRule(playerIndex);
-				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
-					int rulePlayerIndex = r.getPlayerIndex();
-					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-							" pi:"+rulePlayerIndex);
-					continue;
-				}
-				r.setPlayerIndex(configPlayerIndex);
-				r.resetAdditionalDescriptionAndConfigDescriptor();
-			}
-			*/
+
 			sb.append(rule.getClass().getSimpleName());
 			sb.append(rule.configDescriptor);
 			sb.append(">");
 			sb.append("w=");
 			sb.append(rule.weighting);
 			sb.append("\n");
+			checksum += rule.weighting;
 		}
 		sb.append("RECRUIT\n");
 		Iterator<RecruitRule> recruitIter = recruitRules.iterator();
 		while(recruitIter.hasNext()) {
 			RecruitRule rule = recruitIter.next();
-			/*if(rule instanceof FindNumber) {
-				FindNumber r = (FindNumber) rule;
-				int configPlayerIndex = r.playerIndexForRule(playerIndex);
-				if(configPlayerIndex == RuleStats.CONFIG_DONT_SAVE) {
-					int rulePlayerIndex = r.getRequiredAnAdjacentSquareThatIsPlayer();
-					Logger.trace("Skiping rule "+rule.getClass().getSimpleName()+rule.configDescriptor + 
-							" pi:"+rulePlayerIndex);
-					continue;
-				}
-				r.setRequiredAnAdjacentSquareThatIsPlayer(configPlayerIndex);
-				r.resetAdditionalDescriptionAndConfigDescriptor();
-			}*/
+	
 			sb.append(rule.getClass().getSimpleName());
 			sb.append(rule.configDescriptor);
 			sb.append(">");
 			sb.append("w=");
 			sb.append(rule.weighting);
 			sb.append("\n");
+			checksum += rule.weighting;
 		}
+		sb.insert(0, "CHECKSUM="+checksum+"\n");
 		return sb.toString();
 	}
 	
@@ -760,9 +744,13 @@ public class ComputerPlay implements Runnable {
 	 * 
 	 * @return	Mean Score
 	 */
-	public int getAverageScore() {
+	public int getAverageScore(boolean noCurrentScore) {
 		int averageScore = gameStatus.players[playerIndex].getScore();
 		int scoreCount = 1;
+		if(noCurrentScore) {
+			averageScore = 0;
+			scoreCount = 0;
+		}
 		if(previousScores != null) {
 			for(int score:previousScores) {
 				averageScore += score;
@@ -780,5 +768,78 @@ public class ComputerPlay implements Runnable {
 	 */
 	public Vector<PlayRule> getPlayRules() {
 		return playRules;
+	}
+
+	/**
+	 * Get all the Recruit rules
+	 * 
+	 * @return
+	 */
+	public Vector<RecruitRule> getRecruitRules() {
+		return recruitRules;
+	}
+
+	/**
+	 * Check if this is the exact same config
+	 * 
+	 * @param compareComputer
+	 * @return
+	 */
+	public boolean sameConfig(ComputerPlay compareComputer) {
+		int i=0;
+		if(compareComputer.checksum != -1 && checksum != -1 && compareComputer.checksum != checksum) return false;
+		Vector<PlayRule> compareComputerPlayRules = compareComputer.getPlayRules();
+		for(PlayRule rule:playRules) {
+			PlayRule compareRule = compareComputerPlayRules.get(i);
+			if(rule.weighting != compareRule.weighting) {
+				if(!rule.configDescriptor.equalsIgnoreCase(compareRule.configDescriptor)) {
+					Logger.info("Compare Computer: "+filename);
+					Logger.info("Play Rule: "+rule.configDescriptor + " != "+compareRule.configDescriptor);
+				}
+				return false;
+			}
+			i++;
+		}
+		i=0;
+		Vector<RecruitRule> compareComputerRecruitRules = compareComputer.getRecruitRules();
+		for(RecruitRule rule:recruitRules) {
+			RecruitRule compareRule = compareComputerRecruitRules.get(i);
+			if(rule.weighting != compareRule.weighting) {
+				if(!rule.configDescriptor.equalsIgnoreCase(compareRule.configDescriptor)) {
+					Logger.info("Compare Computer: "+filename);
+					Logger.info("Recruit Rule: "+rule.configDescriptor + " != "+compareRule.configDescriptor);
+				}
+				return false;
+			}
+			i++;
+		}
+		return true;
+	}
+
+	/**
+	 * Find out where the scores start to differ and merge the scores
+	 * 
+	 * @param computer
+	 */
+	public void mergeScores(ComputerPlay computer) {
+		int thisMatchScoresUntil=previousScores.length-1;
+		int themMatchScoresUntil=computer.previousScores.length-1;
+		Vector<Integer> newScores = new Vector<Integer>();
+		while(thisMatchScoresUntil >= 0 && themMatchScoresUntil >= 0 && previousScores[thisMatchScoresUntil] == computer.previousScores[themMatchScoresUntil]) {
+			newScores.add(previousScores[thisMatchScoresUntil]);
+			themMatchScoresUntil--;
+			thisMatchScoresUntil--;
+		}
+		for(; thisMatchScoresUntil >= 0; thisMatchScoresUntil--) {
+			newScores.add(previousScores[thisMatchScoresUntil]);
+		}
+		for(; themMatchScoresUntil >= 0; themMatchScoresUntil--) {
+			newScores.add(computer.previousScores[themMatchScoresUntil]);
+		}
+		
+		previousScores = new int[newScores.size()];
+		for(int i=0; i < newScores.size(); i++) {
+			previousScores[(newScores.size()-i)-1] = newScores.get(i);
+		}
 	}
 }

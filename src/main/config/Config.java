@@ -84,7 +84,15 @@ public class Config {
 		 */
 		COMPUTER_QUICK_RECRUIT("computer_quick_recruit","1"), 
 		/** The number of milliseconds to pause on the computer actions if the game is being played by a real person */
-		INTERACTIVE_COMPUTER_PAUSE("interactive_computer_pause","500");
+		INTERACTIVE_COMPUTER_PAUSE("interactive_computer_pause","500"), 
+		/** If the computer configs should be consolidated on start up */
+		CONSOLIDATE_ON_STARTUP("consolidate_computer_configs","1"),
+		/** The number of computers to hold in memory before pergin during consoldiation (so we don't run out of memory) */
+		MAX_IN_MEMORY_COMPUTERS_DURING_CONSOLIDATION("max_computers_during_consolidation","100"),
+		/** If we should perge the in memory computers when the maximum is reached */
+		PERGE_ON_MAX_COMPUTERS_DURING_PURGE("perge_on_max_computers","1"),
+		/** Remove duplicate files when we save (takes longer) */
+		CHECK_DUPLICATES_ON_SAVE("check_duplicates_on_save","1");
 		
 		/** The key to be used in the config file */
 		private String key;

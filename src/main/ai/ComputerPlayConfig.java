@@ -20,6 +20,7 @@ public class ComputerPlayConfig {
 	private HashMap<String,PlayRule> playRules;
 	private HashMap<String,RecruitRule> recruitRules;
 	private SECTION section = SECTION.NONE;
+	private long checksum = -1;
 	
 	public ComputerPlayConfig(String config, GameStatus gameStatus, Board board, int ourPlayerIndex) {
 		playRules = new HashMap<String,PlayRule>();
@@ -28,6 +29,10 @@ public class ComputerPlayConfig {
 		int i = 0;
 		lines[i] = lines[i].trim();
 		while(!lines[i].startsWith("SCORE") && i < lines.length) {
+			if(lines[i].startsWith("CHECKSUM=")) {
+				String[] kv = lines[i].split("=");
+				checksum = Long.parseLong(kv[1]);
+			}
 			i++;
 			lines[i] = lines[i].trim();
 		}
@@ -103,5 +108,9 @@ public class ComputerPlayConfig {
 
 	public HashMap<String, RecruitRule> getRecruitRules() {
 		return recruitRules;
+	}
+	
+	public long getCheckSum() {
+		return checksum;
 	}
 }

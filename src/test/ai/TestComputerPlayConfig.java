@@ -53,7 +53,7 @@ public class TestComputerPlayConfig extends TestCase {
 	public void testGetConfigFileContents() {
 		ComputerPlay comp = new ComputerPlay(0,gameStatus,board);
 		
-		String compConfigStr = comp.getConfigFileContents();
+		String compConfigStr = comp.getConfigFileContents(false);
 		ComputerPlayConfig compConf = new ComputerPlayConfig(compConfigStr,gameStatus, board, 0);
 		HashMap<String, PlayRule> playRulesHash = compConf.getPlayRules();
 		

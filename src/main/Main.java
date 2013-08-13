@@ -1,6 +1,9 @@
 package main;
 
 import java.awt.Color;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import main.Logger.LEVEL;
 import main.ai.ComputerPlay;
@@ -84,6 +87,11 @@ public class Main {
 			gameStatus.config.setValue(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey(), DEFAULT_CONFIG_DIR);
 			FileManager.createConfigDir(gameStatus, board);
 			gameStatus.display.repaint();
+		}
+		
+		if(gameStatus.config.getInt(Config.KEY.CONSOLIDATE_ON_STARTUP.getKey()) == 1) {
+			fakeInitialisePlayers(gameStatus);
+			consolidateComputerConfigs(gameStatus);
 		}
 		
 		while(gameStatus.gameState == GameState.INIT) {		
@@ -180,7 +188,8 @@ public class Main {
 					continue;
 				}
 				String previousFilename = comp.filename;
-				FileManager.saveComputerPlayer(comp, gameStatus, board);
+				boolean checkDuplicates = Main.gameStatus.config.getInt(Config.KEY.CHECK_DUPLICATES_ON_SAVE.getKey()) == 1;
+				FileManager.saveComputerPlayer(comp, gameStatus, board, false, false, checkDuplicates);
 				FileManager.deletePreviousFile(previousFilename, gameStatus);
 				i++;
 			}
@@ -298,5 +307,77 @@ public class Main {
 	 */
 	public static GameState getGameState() {
 		return gameStatus.gameState;
+	}
+	
+	/**
+	 * 
+	 * @param gameStatus
+	 */
+	private static void fakeInitialisePlayers(GameStatus gameStatus) {
+		gameStatus.players[gameStatus.nativePlayerIndex] = 
+			new Player(gameStatus.nativePlayerIndex, Player.TYPE.NATIVE, "Natives", Color.GREEN, gameStatus, board);
+		gameStatus.players[gameStatus.seaPlayerIndex] = 
+			new Player(gameStatus.seaPlayerIndex, Player.TYPE.NATIVE, "SEA", Color.BLUE, gameStatus, board);
+		
+		gameStatus.winner = null;
+		gameStatus.currentTurn = 0;
+		board.init();
+		int numPlayers = gameStatus.config.getInt(Config.KEY.NUMBER_PLAYERS.getKey());
+		for(gameStatus.currentPlayerIndex = 0; gameStatus.currentPlayerIndex < numPlayers; gameStatus.currentPlayerIndex++) {
+			int color = gameStatus.config.getInt(Config.KEY.PLAYER_COLOR.getKey(),gameStatus.currentPlayerIndex);
+			Player.TYPE type = Player.TYPE.COMPUTER;
+			gameStatus.players[gameStatus.currentPlayerIndex] = 
+				new Player(gameStatus.currentPlayerIndex, type, "Player "+gameStatus.currentPlayerIndex, new Color(color), gameStatus, board);
+		}
+		gameStatus.display.newBoard(board);
+		gameStatus.display.init(gameStatus, board);
+	}
+	
+	/**
+	 * 
+	 * @param gameStatus
+	 */
+	private static void consolidateComputerConfigs(GameStatus gameStatus) {
+		Logger.info("Consolidating files");
+		File[] allFiles = FileManager.listAllFiles(gameStatus);
+		ArrayList<ComputerPlay> computers = new ArrayList<ComputerPlay>();
+		int counter = 0;
+		for(File file:allFiles) {
+			if(counter%50 == 0) Logger.info("Loading file "+(counter+1)+" of "+allFiles.length+": "+file.getName());
+			ComputerPlay computer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board);
+			if(computer == null) continue;
+			boolean found = false;
+			Iterator<ComputerPlay> iter = computers.iterator();
+			while(iter.hasNext()) {
+				ComputerPlay thisComp = iter.next();
+				if(thisComp.sameConfig(computer)) {
+					computer.mergeScores(thisComp);
+					String previousFilename = computer.filename;
+					FileManager.saveComputerPlayer(computer, gameStatus, board, true, true, false);
+					FileManager.deletePreviousFile(previousFilename, gameStatus);
+					FileManager.deletePreviousFile(thisComp.filename, gameStatus);
+					Logger.info("New File: "+ computer.filename+", Old Files: "+ previousFilename + "," + thisComp.filename);
+					iter.remove();
+					break;
+				}
+			}
+			if(!found) {
+				if(counter > gameStatus.config.getInt(Config.KEY.MAX_IN_MEMORY_COMPUTERS_DURING_CONSOLIDATION.getKey())) {
+					if(gameStatus.config.getInt(Config.KEY.PERGE_ON_MAX_COMPUTERS_DURING_PURGE.getKey()) == 1) {
+						// perge files
+						Logger.info("Perging "+computers.size()+" of original "+allFiles.length);
+						gameStatus.display.repaint();
+						computers = new ArrayList<ComputerPlay>();
+						counter = 0;
+					}
+				}
+				if(counter <= gameStatus.config.getInt(Config.KEY.MAX_IN_MEMORY_COMPUTERS_DURING_CONSOLIDATION.getKey())) {
+					computers.add(computer);
+					counter++;
+				}
+			}
+		}
+		
+		Logger.info("Saved back "+computers.size()+" of original "+allFiles.length);
 	}
 }

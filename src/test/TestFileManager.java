@@ -61,9 +61,9 @@ public class TestFileManager extends TestCase {
 	
 	public void testSaveComputer() {
 		ComputerPlay comp = new ComputerPlay(0,gameStatus,board);
-		FileManager.saveComputerPlayer(comp, gameStatus, board, true);
+		FileManager.saveComputerPlayer(comp, gameStatus, board, true, true, false);
 		ComputerPlay compLoaded = FileManager.loadComputerPlayer(comp.filename, 0, gameStatus, board);
-		FileManager.saveComputerPlayer(compLoaded, gameStatus, board);
+		FileManager.saveComputerPlayer(compLoaded, gameStatus, board, false, false, false);
 		ComputerPlay compLoaded2 = FileManager.loadComputerPlayer(compLoaded.filename, 0, gameStatus, board);
 		deepCompareComputer(compLoaded,compLoaded2, 1);
 		Logger.info("Compare to original computer");
@@ -86,8 +86,8 @@ public class TestFileManager extends TestCase {
 					loaded.weighting, 
 					saved.equals(loaded));
 		}
-		String config1 = comp1.getConfigFileContents();
-		String config2 = comp2.getConfigFileContents();
+		String config1 = comp1.getConfigFileContents(false);
+		String config2 = comp2.getConfigFileContents(false);
 		while(fromConfigCount > 0) {
 			config2 = TestRig.stripSecondScore(config2);
 			fromConfigCount--;
