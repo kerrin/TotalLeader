@@ -60,4 +60,9 @@ public class BuildBridge extends PlayRule {
 		}
 		return null;
 	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		return weighting;
+	}
 }

@@ -240,4 +240,16 @@ public class FindNumber extends RecruitRule {
 		}
 		return null;
 	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		if(real) return weighting;
+		int modifiedWeighting = weighting;
+		switch(numberToFindOponent) {
+		case 0: modifiedWeighting *= 2; break;
+		case 1: modifiedWeighting *= 4; break;
+		case 2: modifiedWeighting *= 3; break;
+		}
+		return modifiedWeighting;
+	}
 }

@@ -33,8 +33,8 @@ public class FindANumberNearMe extends PlayRule {
 	 * @param parts
 	 * @param weight
 	 */
-	public FindANumberNearMe(String[] parts, int weight, GameStatus gameStatus, Board board, int ourPlayerIndex) {
-		super(NAME,DESCRIPTION, gameStatus, board, ourPlayerIndex);
+	public FindANumberNearMe(String[] parts, int weight, int order, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weight, order, ACTOR.ADD, gameStatus, board, ourPlayerIndex);
 		for(int i=1; i < parts.length; i++) {
 			String[] kv = parts[i].split("=");
 			if(kv[0].equals("ntf")) {
@@ -47,7 +47,6 @@ public class FindANumberNearMe extends PlayRule {
 				Logger.error("Unknown key in config "+kv[0]);
 			}
 		}
-		this.weighting = weight;
 	}
 	
 	// C'tors with random weightings
@@ -213,5 +212,21 @@ public class FindANumberNearMe extends PlayRule {
 			}
 		}
 		return null;
+	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		if(real) return weighting;
+		int modifiedWeighting = weighting;
+		switch(rulePlayerIndex) {
+		case CONFIG_OPPONENT_PLAYER_ID: modifiedWeighting *= 4; break;
+		case CONFIG_NATIVE_PLAYER_ID: modifiedWeighting *= 2; break;
+		}
+		switch(numberToFind) {
+		case 0: modifiedWeighting *= 2; break;
+		case 1: modifiedWeighting *= 4; break;
+		case 2: modifiedWeighting *= 3; break;
+		}
+		return modifiedWeighting;
 	}
 }

@@ -28,15 +28,14 @@ public class MoveToEdge extends PlayRule {
 	 * @param parts
 	 * @param weight
 	 */
-	public MoveToEdge(String[] parts, int weight, GameStatus gameStatus, Board board, int ourPlayerIndex) {
-		super(NAME,DESCRIPTION, gameStatus, board, ourPlayerIndex);
+	public MoveToEdge(String[] parts, int weight, int order, GameStatus gameStatus, Board board, int ourPlayerIndex) {
+		super(NAME, DESCRIPTION, weight, order, ACTOR.ADD, gameStatus, board, ourPlayerIndex);
 		for(int i=1; i < parts.length; i++) {
 			String[] kv = parts[i].split("=");
 			if(kv[0].equals("cond")) {
 				this.condition = CONDITIONS.valueOf(kv[1]);
 			}
 		}
-		this.weighting = weight;
 		
 		setAdditionalDescription();
 	}
@@ -146,5 +145,10 @@ public class MoveToEdge extends PlayRule {
 			}
 		}
 		return null;
+	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		return weighting;
 	}
 }

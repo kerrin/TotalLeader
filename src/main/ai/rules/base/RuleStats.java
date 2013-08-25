@@ -23,6 +23,11 @@ public abstract class RuleStats {
 	/** Player ID to use for configs be mean the sea */
 	public static final int CONFIG_SEA_PLAYER_ID = 3;
 	
+	/** The rule weights can be 0 to this number */
+	public static final double MAX_RULE_WEIGHT = 10000;
+	/** The rule order can be 0 to this number */
+	public static final double MAX_RULE_ORDER = 10000;
+	
 	/** The current status of the game */
 	public final GameStatus gameStatus;
 	/** The nice name of the rule */
@@ -36,7 +41,7 @@ public abstract class RuleStats {
 	/** The unique identifier for the attributes of this rule */
 	public String configDescriptor;
 	/** The weighting used to decide if we are going to use this rule */
-	public int weighting;
+	protected int weighting;
 	/** Not used */
 	public int order;
 	/** Not used */
@@ -119,8 +124,8 @@ public abstract class RuleStats {
 	 * Randomise the weight, order and actor
 	 */
 	public void randomize() {
-		weighting = (int) (Math.random() * 100);
-		order = (int) (Math.random() * 100);
+		weighting = (int) (Math.random() * MAX_RULE_WEIGHT);
+		order = (int) (Math.random() * MAX_RULE_ORDER);
 		int rand = (int) (Math.random() * ACTOR.values().length);
 		actor = ACTOR.values()[rand];
 	}
@@ -250,6 +255,25 @@ public abstract class RuleStats {
 				description.equals(rule.description) &&
 				weighting == rule.weighting
 				);
+	}
+	
+	/**
+	 * Get the weighting
+	 * If you want to make a rule more or less important, modify the weighting before returning
+	 * 
+	 * @param real	If false, we can modify the weight to increase or decrease the importants of this rule
+	 * 
+	 * @return	"Weight"
+	 */
+	public abstract int getWeighting(boolean real);
+	
+	/**
+	 * Set the unmodified weight
+	 * 
+	 * @param weighting
+	 */
+	public void setWeighting(int weighting) {
+		this.weighting = weighting;
 	}
 	
 	/**

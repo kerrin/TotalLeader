@@ -50,5 +50,8 @@ public class AnyValidRecruit extends RecruitRule {
 		// Nothing
 	}
 
-	
+	@Override
+	public int getWeighting(boolean real) {
+		return 0;
+	}
 }

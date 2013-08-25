@@ -40,7 +40,7 @@ public class AnyValidMove extends PlayRule {
 					int toX = fromX+diffs[i][0];
 					int toY = fromY+diffs[i][1];
 					// Check not outside board
-					if(toX >= boardWidth || toX < 0 || toY > boardHeight || toY < 0) continue;
+					if(toX >= boardWidth || toX < 0 || toY >= boardHeight || toY < 0) continue;
 					// Check not sea with less than enough to build a bridge
 					if(boardArray[toX][toY].getOwner().equals(gameStatus.players[gameStatus.seaPlayerIndex]) && 
 							fromUnits <= gameStatus.config.getInt(Config.KEY.BUILD_BRIDGE.getKey())) continue;
@@ -64,5 +64,10 @@ public class AnyValidMove extends PlayRule {
 	@Override
 	protected void setAdditionalDescription() {
 		// Nothing to add
+	}
+
+	@Override
+	public int getWeighting(boolean real) {
+		return 0;
 	}
 }

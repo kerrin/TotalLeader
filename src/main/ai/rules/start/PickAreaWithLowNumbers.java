@@ -117,4 +117,9 @@ public class PickAreaWithLowNumbers extends StartRule {
 	protected void setAdditionalDescription() {
 		// NOTHING
 	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		return weighting;
+	}
 }

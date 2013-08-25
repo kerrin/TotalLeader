@@ -7,6 +7,8 @@ import main.GameStatus;
 import main.Logger;
 import main.ai.rules.base.PlayRule;
 import main.ai.rules.base.RecruitRule;
+import main.ai.rules.base.RuleStats;
+import main.ai.rules.base.RuleStats.ACTOR;
 import main.ai.rules.play.BuildBridge;
 import main.ai.rules.play.FindANumberNearMe;
 import main.ai.rules.play.FindANumberThatICanBuildLandTo;
@@ -20,7 +22,7 @@ public class ComputerPlayConfig {
 	private HashMap<String,PlayRule> playRules;
 	private HashMap<String,RecruitRule> recruitRules;
 	private SECTION section = SECTION.NONE;
-	private long checksum = -1;
+	private long[] checksums = new long[]{-1,-1};
 	
 	public ComputerPlayConfig(String config, GameStatus gameStatus, Board board, int ourPlayerIndex) {
 		playRules = new HashMap<String,PlayRule>();
@@ -31,7 +33,18 @@ public class ComputerPlayConfig {
 		while(!lines[i].startsWith("SCORE") && i < lines.length) {
 			if(lines[i].startsWith("CHECKSUM=")) {
 				String[] kv = lines[i].split("=");
-				checksum = Long.parseLong(kv[1]);
+				String[] checksumsString = kv[1].split(",");
+				if(checksumsString.length > 0) {
+					checksums[0] = Long.parseLong(checksumsString[0]);
+					if(checksumsString.length > 1) {
+						checksums[1] = Long.parseLong(checksumsString[1]);
+					} else {
+						checksums[1] = -1;
+					}
+				} else {
+					checksums[0] = -1;
+					checksums[1] = -1;
+				}
 			}
 			i++;
 			lines[i] = lines[i].trim();
@@ -59,22 +72,30 @@ public class ComputerPlayConfig {
 				section = SECTION.RECRUIT;
 				continue;
 			}
-			String[] partsAndWeight = lines[i].split(">");
-			String[] weightKV = partsAndWeight[1].split("=");
-			int weight = Integer.parseInt(weightKV[1]);
-			String[] parts = partsAndWeight[0].split(":");
+			String[] partsAndValues = lines[i].split(">");
+			String[] valuesKV = partsAndValues[1].split(":");
+			int weight = (int) (Math.random() * RuleStats.MAX_RULE_WEIGHT);
+			int order = (int) (Math.random() * RuleStats.MAX_RULE_ORDER);
+			for(String values:valuesKV) {
+				String[] valueKV = values.split("=");
+				if(valueKV[0].equalsIgnoreCase("w")) {
+					weight = Integer.parseInt(valueKV[1]);
+				} else if(valueKV[0].equalsIgnoreCase("o")) {
+					order = Integer.parseInt(valueKV[1]);
+				}
+			}
+			String[] parts = partsAndValues[0].split(":");
 			if(section == SECTION.PLAY) {
 				PlayRule rule = null;
 				String className = parts[0];
 				if(className.equals("FindANumberNearMe")) {
-					rule = new FindANumberNearMe(parts, weight, gameStatus, board, ourPlayerIndex);
+					rule = new FindANumberNearMe(parts, weight, order, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("FindANumberThatICanBuildLandTo")) {
-					rule = new FindANumberThatICanBuildLandTo(parts, weight, gameStatus, board, ourPlayerIndex);
+					rule = new FindANumberThatICanBuildLandTo(parts, weight, order, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("MoveToEdge")) {
-					rule = new MoveToEdge(parts,weight, gameStatus, board, ourPlayerIndex);
+					rule = new MoveToEdge(parts, weight, order, gameStatus, board, ourPlayerIndex);
 				} else if(className.equals("BuildBridge")) {
-					rule = new BuildBridge(gameStatus, board, ourPlayerIndex);
-					rule.weighting = weight;
+					rule = new BuildBridge(weight, order, ACTOR.ADD, gameStatus, board, ourPlayerIndex);
 				} else {
 					Logger.error("Unknown rule class in config "+className);
 				}
@@ -110,7 +131,7 @@ public class ComputerPlayConfig {
 		return recruitRules;
 	}
 	
-	public long getCheckSum() {
-		return checksum;
+	public long[] getCheckSums() {
+		return checksums;
 	}
 }

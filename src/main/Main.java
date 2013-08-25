@@ -377,7 +377,6 @@ public class Main {
 				}
 			}
 		}
-		
 		Logger.info("Saved back "+computers.size()+" of original "+allFiles.length);
 	}
 }

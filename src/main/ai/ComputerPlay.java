@@ -84,8 +84,12 @@ public class ComputerPlay implements Runnable {
 	private int playerIndex;
 	/** All the rules for a standard move */
 	private Vector<PlayRule> playRules;
+	/** All the rules for a standard move, in order */
+	private HashMap<Integer,Vector<PlayRule>> orderedPlayRules;
 	/** All the rules for recruit placement */
 	private Vector<RecruitRule> recruitRules;
+	/** All the rules for recruit placement */
+	private HashMap<Integer,Vector<RecruitRule>> orderedRecruitRules;
 	/** The rule to find a valid move if all else fails. Will probably never run */
 	private AnyValidMove anyValidMove;
 	/** The rule to find anywhere to place a recruit. Will probably never run */
@@ -97,7 +101,7 @@ public class ComputerPlay implements Runnable {
 	/** The total of all weightings for the recruit rules, so we can determine the chance of each rule running */
 	private long totalRecruitRuleWeights = 0;
 	/** If this computer has a checksum */
-	private long checksum = -1;
+	private long[] checksums = new long[]{-1,-1};;
 	
 	/**
 	 * 
@@ -113,6 +117,7 @@ public class ComputerPlay implements Runnable {
 		this.board = board;
 		ComputerPlayConfig config = new ComputerPlayConfig(configContent, gameStatus, board, playerIndex);
 		setUpRulesFromConfigFile(config);
+		orderRules();
 	}
 	
 	/**
@@ -146,7 +151,7 @@ public class ComputerPlay implements Runnable {
 		Logger.debug("Generated " + playRules.size() + " play rules");
 		
 		// Get the total weightings for play rules
-		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.weighting;
+		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.getWeighting(false);
 		anyValidMove = new AnyValidMove(gameStatus, board, playerIndex);
 		
 		recruitRules = new Vector<RecruitRule>();
@@ -168,16 +173,18 @@ public class ComputerPlay implements Runnable {
 		Logger.debug("Generated " + recruitRules.size() + " recruit rules");
 		
 		// Get the total weightings for play rules
-		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.weighting;
+		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.getWeighting(false);
 		anyValidRecruit = new AnyValidRecruit(gameStatus, board, playerIndex);
+		orderRules();
 	}
+	
 	/**
 	 * Set up the rules based on a gene config file
 	 * 
 	 * @param config
 	 */
 	private void setUpRulesFromConfigFile(ComputerPlayConfig config) {
-		checksum  = config.getCheckSum();
+		checksums  = config.getCheckSums();
 		HashMap<String, PlayRule> configPlayRule = config.getPlayRules();
 		HashMap<String, RecruitRule> configRecruitRule = config.getRecruitRules();
 		int maxUnits = gameStatus.config.getInt(Config.KEY.MAX_UNITS.getKey());
@@ -205,7 +212,7 @@ public class ComputerPlay implements Runnable {
 		Logger.debug("Generated " + playRules.size() + " play rules");
 		
 		// Get the total weightings for play rules
-		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.weighting;
+		for(PlayRule rule:playRules) totalPlayRuleWeights += rule.getWeighting(false);
 		anyValidMove = new AnyValidMove(gameStatus, board, playerIndex);
 		
 		recruitRules = new Vector<RecruitRule>();
@@ -227,10 +234,47 @@ public class ComputerPlay implements Runnable {
 		Logger.debug("Generated " + recruitRules.size() + " recruit rules");
 		
 		// Get the total weightings for play rules
-		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.weighting;
+		for(RecruitRule rule:recruitRules) totalRecruitRuleWeights += rule.getWeighting(false);
 		anyValidRecruit = new AnyValidRecruit(gameStatus, board, playerIndex);
 	}
 	
+	/**
+	 * Create the ordered rules data structures
+	 */
+	private void orderRules() {
+		orderedPlayRules = new HashMap<Integer, Vector<PlayRule>>();
+		for(PlayRule thisRule:playRules) {
+			int order = thisRule.order;
+			if(orderedPlayRules.containsKey(order)) {
+				// Add to this entry that already exists
+				Vector<PlayRule> rulesWithThisOrder = orderedPlayRules.get(order);
+				rulesWithThisOrder.add(thisRule);
+				orderedPlayRules.put(order, rulesWithThisOrder);
+			} else {
+				// Create new entry
+				Vector<PlayRule> rulesWithThisOrder = new Vector<PlayRule>();
+				rulesWithThisOrder.add(thisRule);
+				orderedPlayRules.put(order, rulesWithThisOrder);
+			}
+		}
+		
+		orderedRecruitRules = new HashMap<Integer, Vector<RecruitRule>>();
+		for(RecruitRule thisRule:recruitRules) {
+			int order = thisRule.order;
+			if(orderedRecruitRules.containsKey(order)) {
+				// Add to this entry that already exists
+				Vector<RecruitRule> rulesWithThisOrder = orderedRecruitRules.get(order);
+				rulesWithThisOrder.add(thisRule);
+				orderedRecruitRules.put(order, rulesWithThisOrder);
+			} else {
+				// Create new entry
+				Vector<RecruitRule> rulesWithThisOrder = new Vector<RecruitRule>();
+				rulesWithThisOrder.add(thisRule);
+				orderedRecruitRules.put(order, rulesWithThisOrder);
+			}
+		}
+	}
+
 	/**
 	 * Set the player index on a ComputerPlay object that hasn't got one yet
 	 * @param index
@@ -252,7 +296,6 @@ public class ComputerPlay implements Runnable {
 	/**
 	 * Take a move
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
 		// Do computer stuff
@@ -267,13 +310,13 @@ public class ComputerPlay implements Runnable {
 				if(quickRecruit && place != null && board.getBoard()[place.x][place.y].getUnits() >= maxUnits) {
 					place = null;
 				}
-				Vector<RecruitRule> thisTurnsRules = (Vector<RecruitRule>)recruitRules.clone();
+				Vector<RecruitRule> thisTurnsRules = getOrderedRecruitRulesVector();
 				while(!thisTurnsRules.isEmpty() && place == null) {
 					long pickRule = (long)(Math.random()*totalRecruitRuleWeights);
 					Iterator<RecruitRule> iter = thisTurnsRules.iterator();
 					while(place == null && iter.hasNext()) {
 						RecruitRule rule = iter.next();
-						pickRule -= rule.weighting;
+						pickRule -= rule.getWeighting(false);
 						if(pickRule > 0) continue;
 						place = rule.getBestRecruit();
 						if(place == null) {
@@ -298,13 +341,13 @@ public class ComputerPlay implements Runnable {
 		} else {
 			ComputerSelectThread.waitOnComputerSelect();
 			ComputerMove move = null;
-			Vector<PlayRule> thisTurnsRules = (Vector<PlayRule>)playRules.clone();
+			Vector<PlayRule> thisTurnsRules = getOrderedPlayRulesVector();
 			while(!thisTurnsRules.isEmpty() && move == null) {
 				long pickRule = (long)(Math.random()*totalPlayRuleWeights);
 				Iterator<PlayRule> iter = thisTurnsRules.iterator();
 				while(move == null && iter.hasNext()) {
 					PlayRule rule = iter.next();
-					pickRule -= rule.weighting;
+					pickRule -= rule.getWeighting(false);
 					if(pickRule > 0) continue;
 					move = rule.getBestMove();
 					if(move == null) {
@@ -331,6 +374,32 @@ public class ComputerPlay implements Runnable {
 		freeComputerPlayer();
 	}
 	
+	/**
+	 * Get the ordered list of play rules
+	 * 
+	 * @return
+	 */
+	private Vector<PlayRule> getOrderedPlayRulesVector() {
+		Vector<PlayRule> returnRules = new Vector<PlayRule>();
+		for(Integer order:orderedPlayRules.keySet()) {
+			returnRules.addAll(orderedPlayRules.get(order));
+		}
+		return returnRules;
+	}
+
+	/**
+	 * Get the ordered list of recruit rules
+	 * 
+	 * @return
+	 */
+	private Vector<RecruitRule> getOrderedRecruitRulesVector() {
+		Vector<RecruitRule> returnRules = new Vector<RecruitRule>();
+		for(Integer order:orderedRecruitRules.keySet()) {
+			returnRules.addAll(orderedRecruitRules.get(order));
+		}
+		return returnRules;
+	}
+
 	/**
 	 * Release the computer player lock
 	 */
@@ -422,7 +491,8 @@ public class ComputerPlay implements Runnable {
 		// Select an arbitrary player for the opponent
 		StringBuffer sb = new StringBuffer("");
 		
-		long checksum = 0;
+		long[] checksum = new long[2];
+		checksum[0] = 0; checksum[1] = 0;
 		
 		sb.append("SCORE=");
 		int gameScore = -1;
@@ -453,9 +523,11 @@ public class ComputerPlay implements Runnable {
 			sb.append(rule.configDescriptor);
 			sb.append(">");
 			sb.append("w=");
-			sb.append(rule.weighting);
+			sb.append(rule.getWeighting(true));
+			sb.append(":o=");
+			sb.append(rule.order);
 			sb.append("\n");
-			checksum += rule.weighting;
+			checksum[0] += rule.getWeighting(true);
 		}
 		sb.append("RECRUIT\n");
 		Iterator<RecruitRule> recruitIter = recruitRules.iterator();
@@ -466,11 +538,11 @@ public class ComputerPlay implements Runnable {
 			sb.append(rule.configDescriptor);
 			sb.append(">");
 			sb.append("w=");
-			sb.append(rule.weighting);
+			sb.append(rule.getWeighting(true));
 			sb.append("\n");
-			checksum += rule.weighting;
+			checksum[1] += rule.getWeighting(true);
 		}
-		sb.insert(0, "CHECKSUM="+checksum+"\n");
+		sb.insert(0, "CHECKSUM="+checksum[0]+","+checksum[1]+"\n");
 		return sb.toString();
 	}
 	
@@ -787,11 +859,14 @@ public class ComputerPlay implements Runnable {
 	 */
 	public boolean sameConfig(ComputerPlay compareComputer) {
 		int i=0;
-		if(compareComputer.checksum != -1 && checksum != -1 && compareComputer.checksum != checksum) return false;
+		if(compareComputer.hasChecksums() && hasChecksums() && 
+				(compareComputer.checksums[0] != checksums[0] || compareComputer.checksums[1] != checksums[1])) {
+			return false;
+		}
 		Vector<PlayRule> compareComputerPlayRules = compareComputer.getPlayRules();
 		for(PlayRule rule:playRules) {
 			PlayRule compareRule = compareComputerPlayRules.get(i);
-			if(rule.weighting != compareRule.weighting) {
+			if(rule.getWeighting(true) != compareRule.getWeighting(true)) {
 				if(!rule.configDescriptor.equalsIgnoreCase(compareRule.configDescriptor)) {
 					Logger.info("Compare Computer: "+filename);
 					Logger.info("Play Rule: "+rule.configDescriptor + " != "+compareRule.configDescriptor);
@@ -804,7 +879,7 @@ public class ComputerPlay implements Runnable {
 		Vector<RecruitRule> compareComputerRecruitRules = compareComputer.getRecruitRules();
 		for(RecruitRule rule:recruitRules) {
 			RecruitRule compareRule = compareComputerRecruitRules.get(i);
-			if(rule.weighting != compareRule.weighting) {
+			if(rule.getWeighting(true) != compareRule.getWeighting(true)) {
 				if(!rule.configDescriptor.equalsIgnoreCase(compareRule.configDescriptor)) {
 					Logger.info("Compare Computer: "+filename);
 					Logger.info("Recruit Rule: "+rule.configDescriptor + " != "+compareRule.configDescriptor);
@@ -814,6 +889,10 @@ public class ComputerPlay implements Runnable {
 			i++;
 		}
 		return true;
+	}
+
+	private boolean hasChecksums() {
+		return checksums != null && checksums.length == 2 && checksums[0] != -1 && checksums[1] != -1;
 	}
 
 	/**

@@ -40,4 +40,9 @@ public class BasedOnPlayerNumber extends StartRule {
 	protected void setAdditionalDescription() {
 		// NOTHING
 	}
+	
+	@Override
+	public int getWeighting(boolean real) {
+		return 0;
+	}
 }

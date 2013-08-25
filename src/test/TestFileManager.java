@@ -82,10 +82,10 @@ public class TestFileManager extends TestCase {
 			assertTrue("Rule difference: " +
 					saved.name + " " +
 					saved.configDescriptor + " -> " +
-					saved.weighting + " != " +
+					saved.getWeighting(true) + " != " +
 					loaded.name + " " +
 					loaded.configDescriptor + " -> " +
-					loaded.weighting, 
+					loaded.getWeighting(true), 
 					saved.equals(loaded));
 		}
 		String config1 = comp1.getConfigFileContents(false);

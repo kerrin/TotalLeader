@@ -69,10 +69,10 @@ public class TestComputerPlayConfig extends TestCase {
 			assertTrue("Rule difference: " +
 					playRule1.name + " " +
 					playRule1.configDescriptor + " -> " +
-					playRule1.weighting + " != " +
+					playRule1.getWeighting(true) + " != " +
 					playRule2.name + " " +
 					playRule2.configDescriptor + " -> " +
-					playRule2.weighting, 
+					playRule2.getWeighting(true), 
 					playRule1.equals(playRule2));
 		}
 	}
