@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import main.ai.ChecksumData;
 import main.ai.ComputerPlay;
+import main.ai.ComputerPlayConfig;
 import main.board.Board;
 import main.config.Config;
 import main.player.Player.TYPE;
@@ -18,6 +21,8 @@ import main.player.Player.TYPE;
 
 public class FileManager {
 	
+	private static final int READ_BLOCK_SIZE = 50;
+
 	/**
 	 * Get all the gene config files in the config directory
 	 * 
@@ -83,6 +88,32 @@ public class FileManager {
 	}
 	
 	/**
+	 * Open a file stream
+	 * 
+	 * @param filenameAndPath
+	 * @param careAboutFileNotFound
+	 * 
+	 * @return File stream and size
+	 */
+	public static StreamData streamFile(String filenameAndPath, boolean careAboutFileNotFound) {
+		Logger.debug("Loading: "+filenameAndPath);
+		FileInputStream istream;
+		File f = new File(filenameAndPath);
+		try {
+			istream = new FileInputStream(f);
+		} catch (FileNotFoundException e) {
+			if(careAboutFileNotFound) {
+				Logger.info("File not found: "+filenameAndPath);
+				e.printStackTrace();
+			}
+			return null;
+		}
+		InputStreamReader reader = new InputStreamReader( istream );
+		int size = (int) f.length();
+		return new StreamData(reader, size);
+	}
+	
+	/**
 	 * Write out a ComputerPlay file to disk
 	 * 
 	 * @param saveComp			The ComputerPlay to write out
@@ -129,9 +160,14 @@ public class FileManager {
 			File[] allFiles = FileManager.listAllFiles(gameStatus);
 			int i=0;
 			for(File file:allFiles) {
+				if(!possibleMatchingComputerConfig(gameStatus, file, saveComp)) {
+					i++;
+					continue;
+				}
+				
 				ComputerPlay compareComputer = FileManager.loadComputerPlayer(file.getName(), 0, gameStatus, board, false);
 				if(compareComputer == null) continue;
-				if(i%50 == 0) Logger.info("Loading file "+(i+1)+" of "+allFiles.length+": "+file.getName());
+				Logger.info("Loading file "+(i+1)+" of "+allFiles.length+": "+file.getName());
 				if(saveComp.sameConfig(compareComputer)) {
 					saveComp.mergeScores(compareComputer);
 					deleteFiles.add(compareComputer.filename);
@@ -168,6 +204,45 @@ public class FileManager {
 			Logger.info("Deleting duplicate " + filename);
 			deletePreviousFile(filename, gameStatus);
 		}
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param gameStatus
+	 * @param file
+	 * @param checkComputerPlayer
+	 * 
+	 * return 	Does this file possible match the computer player
+	 */
+	private static boolean possibleMatchingComputerConfig(GameStatus gameStatus, File file, ComputerPlay checkComputerPlayer) {
+		StreamData streamData = FileManager.streamFile(
+				gameStatus.config.getString(Config.KEY.BASE_COMPUTER_CONFIG_PATH.getKey())+file.getName(), 
+				false);
+		long readBytes = 0;
+		ChecksumData checkSum = new ChecksumData();
+		char[] data = new char[READ_BLOCK_SIZE];
+		char[] readFile = new char[0];
+		try {
+			while(streamData != null && readBytes < streamData.fileSize && (checkSum == null || !checkSum.found)) {
+				streamData.reader.read( data, 0, READ_BLOCK_SIZE );
+				readFile = concat(readFile,data);
+				String tempString = new String(readFile);
+				String[] lines = tempString.split("\n");
+				checkSum = ComputerPlayConfig.readChecksum(lines, 0);
+			}
+			if(streamData != null) streamData.reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return checkSum != null && checkSum.found && checkComputerPlayer.sameChecksum(checkSum.checksums);
+	}
+	
+	public static char[] concat(char[] first, char[] second) {
+		char[] result = Arrays.copyOf(first, first.length + second.length);
+		System.arraycopy(second, 0, result, first.length, second.length);
+		return result;
 	}
 
 	/**

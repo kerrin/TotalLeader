@@ -855,12 +855,12 @@ public class ComputerPlay implements Runnable {
 	 * Check if this is the exact same config
 	 * 
 	 * @param compareComputer
+	 * 
 	 * @return
 	 */
 	public boolean sameConfig(ComputerPlay compareComputer) {
 		int i=0;
-		if(compareComputer.hasChecksums() && hasChecksums() && 
-				(compareComputer.checksums[0] != checksums[0] || compareComputer.checksums[1] != checksums[1])) {
+		if(compareComputer.hasChecksums() && hasChecksums() && !sameChecksum(compareComputer.checksums)) {
 			return false;
 		}
 		Vector<PlayRule> compareComputerPlayRules = compareComputer.getPlayRules();
@@ -887,6 +887,20 @@ public class ComputerPlay implements Runnable {
 				return false;
 			}
 			i++;
+		}
+		return true;
+	}
+	
+	/**
+	 * Check if the checksums match
+	 * 
+	 * @param compareChecksums
+	 * @return
+	 */
+	public boolean sameChecksum(long[] compareChecksums) {
+		if(compareChecksums != null && compareChecksums.length == 2 && hasChecksums() && 
+				(compareChecksums[0] != checksums[0] || compareChecksums[1] != checksums[1])) {
+			return false;
 		}
 		return true;
 	}

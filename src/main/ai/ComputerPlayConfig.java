@@ -30,25 +30,13 @@ public class ComputerPlayConfig {
 		String[] lines = config.split("\n");
 		int i = 0;
 		lines[i] = lines[i].trim();
-		while(!lines[i].startsWith("SCORE") && i < lines.length) {
-			if(lines[i].startsWith("CHECKSUM=")) {
-				String[] kv = lines[i].split("=");
-				String[] checksumsString = kv[1].split(",");
-				if(checksumsString.length > 0) {
-					checksums[0] = Long.parseLong(checksumsString[0]);
-					if(checksumsString.length > 1) {
-						checksums[1] = Long.parseLong(checksumsString[1]);
-					} else {
-						checksums[1] = -1;
-					}
-				} else {
-					checksums[0] = -1;
-					checksums[1] = -1;
-				}
-			}
-			i++;
-			lines[i] = lines[i].trim();
+		ChecksumData checkSum = readChecksum(lines, i);
+		if(!checkSum.found) {
+			Logger.error("Can't find checksum in ComputerPlayConfig");
+			throw new RuntimeException("Invalid ComputerPlayConfig Config");
 		}
+		i = checkSum.index;
+		checksums = checkSum.checksums;
 		if(i >= lines.length) {
 			Logger.error("Can't find score in ComputerPlayConfig");
 			throw new RuntimeException("Invalid ComputerPlayConfig Config");
@@ -117,6 +105,48 @@ public class ComputerPlayConfig {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Read in the checksum
+	 * 
+	 * @param lines
+	 * @param index
+	 * @return
+	 */
+	public static ChecksumData readChecksum(String[] lines, int index) {
+		ChecksumData checkSum = new ChecksumData();
+		int localIndex = index;
+		while(!lines[localIndex].startsWith("SCORE") && localIndex < lines.length) {
+			if(lines[localIndex].startsWith("CHECKSUM=")) {
+				String[] kv = lines[localIndex].split("=");
+				String[] checksumsString = kv[1].split(",");
+				if(checksumsString.length > 0) {
+					checkSum.checksums[0] = Long.parseLong(checksumsString[0]);
+					if(checksumsString.length > 1) {
+						checkSum.checksums[1] = Long.parseLong(checksumsString[1]);
+					} else {
+						checkSum.checksums[1] = -1;
+					}
+					checkSum.found = true;
+				} else {
+					checkSum.checksums[0] = -1;
+					checkSum.checksums[1] = -1;
+				}
+			}
+			localIndex++;
+			lines[localIndex] = lines[localIndex].trim();
+		}
+		if(!checkSum.found) {
+			if(lines[localIndex].startsWith("SCORE")) {
+				// No checksum, so use default
+				checkSum.checksums[0] = -1;
+				checkSum.checksums[1] = -1;
+				checkSum.found = true;
+			}
+		}
+		checkSum.index = localIndex;
+		return checkSum;
 	}
 
 	public int[] getScores() {
